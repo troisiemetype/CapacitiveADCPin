@@ -19,21 +19,32 @@
  */
 
 #include "CapacitiveADCPin.h"
+#include "DigitalPin.h"
 
 const uint8_t readPin = A0;
 const uint8_t friendPin = A1;
 
+const uint8_t ledPin = 13;
+
 CapacitiveADCPin touchChannel;
+DigitalPin lampe;
 
 void setup(){
 	Serial.begin(115200);
 
 	touchChannel.init(readPin, friendPin);
+	lampe.init(ledPin, OUTPUT);
+	lampe = 0;
 }
 
 void loop(){
 	int16_t value = 0;
 	value = touchChannel.read();
+	if(value > 300){
+		lampe = 1;
+	} else {
+		lampe = 0;
+	}
 	Serial.print("delta: ");
 	Serial.println(value);
 	Serial.println();

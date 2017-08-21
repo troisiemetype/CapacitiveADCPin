@@ -24,17 +24,22 @@
 
 // Constructor
 CapacitiveADCPin::CapacitiveADCPin(){
+	// Definition for ADC, when more than 8 ADC channels (Atmega 32u4, 2560, etc.)
 	#if defined(MUX5)
 	ADMUX = 0b01011111;
 	ADCSRA = 0b11000110;
 	ADCSRB = 0b00000000;
 
+	// Definition for ADC, when 8 ADC Channels or less (ATmega 328p)
 	#else
 	ADMUX = 0b01001111;
 	ADCSRA = 0b11000110;
 	ADCSRB = 0b00000000;
 
 	#endif
+
+	// Default transfer delay
+	_transfertDelay = 6;
 
 	// The first reading is longer than a normal one, so let's do one.
 	while(ADCSRA & _BV(ADSC));
@@ -44,6 +49,7 @@ CapacitiveADCPin::CapacitiveADCPin(){
 
 // Init method: affect a pin to the object.
 void CapacitiveADCPin::init(uint8_t pin, uint8_t friendPin){
+	// Get a local copy of the pin numbers
 	_pin = pin;
 	_friendPin = friendPin;
 	_channel = _pin;
@@ -92,15 +98,34 @@ void CapacitiveADCPin::init(uint8_t pin, uint8_t friendPin){
 	_dFriendPin.init(_friendPin);
 }
 
+// Set the charge delay.
+// This is the minimal delay for the charge to transfer from electrode to s&h capacitor,
+// back and forth.
+void CapacitiveADCPin::setChargeDelay(uint8_t value){
+	_transfertDelay = value;
+}
+
 
 // Read function.
 int16_t CapacitiveADCPin::read(){
-	int32_t value = 0;
+	int16_t value = 0;
+	// Charge the pin
 	charge();
+	// Wait for the electrode to be charged.
+	delayMicroseconds(_transfertDelay);
+//	Serial.print("charge: ");
+	// Get a reading.
 	value = share();
+	// Discharge the pin.
 	discharge();
+	// Wait for the electrode to be discharged.
+	delayMicroseconds(_transfertDelay);
+//	Serial.print("discharge: ");
+	// Get a reading.
 	value -= share();
-	return (int16_t)value;
+
+	// Add a fix offset to the return result, so the value is always above 0.
+	return value + READ_OFFSET;
 }
 
 // Private methods
@@ -111,6 +136,7 @@ int16_t CapacitiveADCPin::read(){
 void CapacitiveADCPin::charge(){
 	// Discharge the ADC s&h cap by linking it to ground.
 	setMux(ADC_GND);
+	// Charge the electrode.
 	_dPin.setDirection(OUTPUT);
 	_dPin.set();
 }
@@ -120,9 +146,11 @@ void CapacitiveADCPin::charge(){
 // that is output HIGH.
 // Then discharge the electrode by setting it to output LOW.
 void CapacitiveADCPin::discharge(){
+	// Charge the ADC.
 	setMux(_friendChannel);
 	_dFriendPin.setDirection(OUTPUT);
 	_dFriendPin.set();
+	// Discharge the electrode.
 	_dPin.setDirection(OUTPUT);
 	_dPin.clear();
 }
@@ -137,6 +165,7 @@ uint16_t CapacitiveADCPin::share(){
 	_dPin.setDirection(INPUT);
 	// Set the ADC channel to that pin.
 	setMux(_channel);
+	// Launch a conversion, and wait for it to be done.
 	ADCSRA |= _BV(ADSC);
 	while(ADCSRA & _BV(ADSC));
 
@@ -148,10 +177,13 @@ uint16_t CapacitiveADCPin::share(){
 	return value;
 }
 
+// Set the ADC to a channel.
+// That can be ground for discharging, electrode pin for reading, or friend pin for charging.
 void CapacitiveADCPin::setMux(uint8_t channel){
 	// Set channel number to 0
 	ADMUX &= ~(0x1F);
 
+	// Tie ADC to ground for discharging
 	if(channel == ADC_GND){
 		ADMUX |= ADC_MUX_GND;
 	#if defined(MUX5)
@@ -167,4 +199,3 @@ void CapacitiveADCPin::setMux(uint8_t channel){
 	}
 
 }
-

@@ -1,5 +1,5 @@
 /*
- * This Arduino library is for using Arduino pins as capacitives pins, using ADC.
+ * This is a demo sketch for capacitives pins, using ADC.
  * Copyright (C) 2017  Pierre-Loup Martin
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,48 +18,42 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef CAPACITIVE_ADC_PIN_H
-#define CAPACITIVE_ADC_PIN_H
-
-#include <Arduino.h>
+#include "CapacitiveADC.h"
 #include "DigitalPin.h"
 
-#if defined(MUX5)
-#define ADC_MUX_GND		0x1F
-#else
-#define ADC_MUX_GND		0x0F
-#endif
+const uint8_t readPin = A0;
+const uint8_t friendPin = A1;
 
-#define ADC_GND 		0xFF
+const uint8_t ledPin = 13;
 
-#define READ_OFFSET 	0xFF
+CapacitiveADC touch;
+DigitalPin lampe;
 
-class CapacitiveADCPin{
-public:
-	CapacitiveADCPin();
+void setup(){
+	Serial.begin(115200);
 
-	void init(uint8_t pin, uint8_t friendPin = 0);
+	touch.init(readPin, friendPin);
+	touch.setChargeDelay(5);
+	lampe.init(ledPin, OUTPUT);
+	lampe = 0;
+}
 
-	void setChargeDelay(uint8_t value);
+void loop(){
+	int16_t value = 0;
+	value = touch.update();
+	if(value > 300){
+		lampe = 1;
+	} else {
+		lampe = 0;
+	}
 
-	int16_t read();
+	Serial.print("delta: ");
+	Serial.println(value);
+	Serial.println();
+	delay(100);
+	if(Serial.available()){
+		value = Serial.parseInt();
+		touch.setSamples(value);
+	}
 
-protected:
-	void charge();
-	void discharge();
-	uint16_t share();
-	void setMux(uint8_t channel);
-
-	uint8_t _transfertDelay;
-
-private:
-	DigitalPin _dPin;
-	DigitalPin _dFriendPin;
-	uint8_t _pin;
-	uint8_t _friendPin;
-
-	uint8_t _channel;
-	uint8_t _friendChannel;
-};
-
-#endif
+}
