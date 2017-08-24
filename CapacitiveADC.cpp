@@ -10,12 +10,15 @@
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY{
 
-} without even the implied warranty of
+} without even the implied warranty o_pinR |= _mask;
+}f
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of_pinR |= _mask;
+} the GNU General Public License
+ * along with this program.  If not, _pinR |= _mask;
+}see <http://www.gnu.org/licenses/>.
  */
 
 #include "CapacitiveADC.h"
@@ -23,26 +26,29 @@
 // Public methods
 
 // Constructor
-CapacitiveADC::CapacitiveADC():_samples(1),
+CapacitiveADC::CapacitiveADC()://_samples(1),
 								_touchThreshold(50),
 								_touchReleaseThreshold(40),
 								_proxThreshold(5),
 								_proxReleaseThreshold(3),
-								_debounce(4),
-								_baseline(100),
-								_maxDelta(2),
-								_noiseIncrement(1),
-								_noiseCountRising(3),
-								_noiseCountFalling(1){
+								//_debounce(4),
+								_baseline(100)
+								//_maxDelta(2),
+								//_noiseIncrement(1),
+								//_noiseCountRising(3),
+								//_noiseCountFalling(1)
+								{
 	_adcPin = new CapacitiveADCPin();
+	_gSettings = new SettingsGlobal_t();
 	_state = _previousState = Idle;
 	_counter = 0;
-	_debounce = 1;
+//	_debounce = 1;
 }
 
 // Destructor
 CapacitiveADC::~CapacitiveADC(){
 	delete _adcPin;
+	delete _gSettings;
 }
 
 // Init the object. Tie it to used pins.
@@ -63,7 +69,7 @@ uint16_t CapacitiveADC::update(){
 	_previousState = _state;
 
 	// Update baseline
-	if(absDelta <= _maxDelta){
+	if(absDelta <= _gSettings->maxDelta){
 		_baseline += delta;
 		_state = Idle;
 	// Or prepare to touch
@@ -84,9 +90,9 @@ uint16_t CapacitiveADC::update(){
 	}
 
 	// Test if there is a proximty or touch detection.
-	if(_state == PreTouch && _counter >= _debounce){
+	if(_state == PreTouch && _counter >= _gSettings->debounce){
 		_state = Touch;
-	} else if(_state == PreProx && _counter >= _debounce){
+	} else if(_state == PreProx && _counter >= _gSettings->debounce){
 		_state = Prox;
 	}
 	if(_state != _previousState){
@@ -166,7 +172,7 @@ bool CapacitiveADC::isJustProxReleased(){
 
 // Set the number of samples to sense for one reading.
 void CapacitiveADC::setSamples(uint8_t value){
-	_samples = value;
+	_gSettings->samples = value;
 }
 
 // Set touch threshold
@@ -190,25 +196,32 @@ void CapacitiveADC::setProxReleaseThreshold(uint8_t threshold){
 }
 
 void CapacitiveADC::setDebounce(uint8_t value){
-	_debounce = value;
+	_gSettings->debounce = value;
 }
 
 void CapacitiveADC::setMaxDelta(uint8_t value){
-	_maxDelta = value;
+	_gSettings->maxDelta = value;
 }
 
 void CapacitiveADC::setNoiseIncrement(uint8_t value){
-	_noiseIncrement = value;
+	_gSettings->noiseIncrement = value;
 }
 
 void CapacitiveADC::setNoiseCountRising(uint8_t value){
-	_noiseCountRising = value;
+	_gSettings->noiseCountRising = value;
 }
 
 void CapacitiveADC::setNoiseCountFalling(uint8_t value){
-	_noiseCountFalling = value;
+	_gSettings->noiseCountFalling = value;
 }
 
+void CapacitiveADC::setSettings(const SettingsGlobal_t& settings){
+	*_gSettings = settings;
+}
+
+SettingsGlobal_t CapacitiveADC::getSettings(){
+	return *_gSettings;
+}
 
 
 // Protected methods
@@ -216,22 +229,22 @@ void CapacitiveADC::setNoiseCountFalling(uint8_t value){
 // Get a serie of readings.
 uint16_t CapacitiveADC::updateRead(){
 	int32_t value = 0;
-	for(uint8_t i = 0; i < _samples; i++){
+	for(uint8_t i = 0; i < _gSettings->samples; i++){
 		value += _adcPin->read();
 	}
-	value /= _samples;
+	value /= _gSettings->samples;
 	return (uint16_t)value;
 }
 
 void CapacitiveADC::updateCal(){
 	if(_state == Rising){
-		if(_counter >= _noiseCountRising){
-			_baseline += _noiseIncrement;
+		if(_counter >= _gSettings->noiseCountRising){
+			_baseline += _gSettings->noiseIncrement;
 			_counter = 0;
 		}
 	} else if(_state == Falling){
-		if(_counter >= _noiseCountFalling){
-			_baseline -= _noiseIncrement;
+		if(_counter >= _gSettings->noiseCountFalling){
+			_baseline -= _gSettings->noiseIncrement;
 			_counter = 0;
 		}
 	}

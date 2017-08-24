@@ -24,6 +24,23 @@
 #include <Arduino.h>
 #include "CapacitiveADCPin.h"
 
+struct SettingsGlobal_t{
+	uint8_t samples;
+	uint8_t debounce;
+
+	uint8_t maxDelta;
+	uint8_t noiseIncrement;
+	uint8_t noiseCountRising;
+	uint8_t noiseCountFalling;
+
+	SettingsGlobal_t():samples(1),
+						debounce(4),
+						maxDelta(2),
+						noiseIncrement(1),
+						noiseCountRising(3),
+						noiseCountFalling(1){}
+};
+
 class CapacitiveADC{
 public:
 
@@ -68,6 +85,9 @@ public:
 	void setNoiseCountRising(uint8_t value);
 	void setNoiseCountFalling(uint8_t value);
 
+	void setSettings(const SettingsGlobal_t& settings);
+	SettingsGlobal_t getSettings();
+
 protected:
 	uint16_t updateRead();
 	void updateCal();
@@ -76,8 +96,11 @@ private:
 	// The pin linked to this capacitive channel
 	CapacitiveADCPin *_adcPin;
 
+	// Global settings
+	SettingsGlobal_t *_gSettings;
+
 	// The number of samples taken for one read.
-	uint8_t _samples;
+//	uint8_t _samples; 								// Struct
 
 	// Threshold values
 	int16_t _touchThreshold;
@@ -86,17 +109,17 @@ private:
 	int16_t _proxReleaseThreshold;
 
 	// Debounce value for prox or touch detection
-	uint8_t _debounce;
+//	uint8_t _debounce;								// Struct
 
 	// values from readings
 	uint16_t _read;
 
 	// Settings for filtering
 	uint8_t _baseline;
-	uint8_t _maxDelta;
-	uint8_t _noiseIncrement;
-	uint8_t _noiseCountRising;
-	uint8_t _noiseCountFalling;
+//	uint8_t _maxDelta;								// Struct
+//	uint8_t _noiseIncrement;						// Struct
+//	uint8_t _noiseCountRising;						// Struct
+//	uint8_t _noiseCountFalling;						// Struct
 	uint16_t _counter;
 
 	// States of sensing
