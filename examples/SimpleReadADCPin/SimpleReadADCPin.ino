@@ -40,6 +40,7 @@ void setup(){
 void loop(){
 	int16_t value = 0;
 	value = touchChannel.read();
+//	value = touchChannel;				// operator overloading
 	if(value > 300){
 		lampe = 1;
 	} else {

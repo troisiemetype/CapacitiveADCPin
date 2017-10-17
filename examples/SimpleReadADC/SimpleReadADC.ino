@@ -34,6 +34,7 @@ void setup(){
 
 	touch.init(readPin, friendPin);
 	touch.setChargeDelay(5);
+	touch.autoTune();
 	lampe.init(ledPin, OUTPUT);
 	lampe = 0;
 }
@@ -41,16 +42,22 @@ void setup(){
 void loop(){
 	int16_t value = 0;
 	value = touch.update();
+
+	lampe = touch.isProx();
+
+	/*
 	if(value > 300){
 		lampe = 1;
 	} else {
 		lampe = 0;
 	}
-
-	Serial.print("delta: ");
+	*/
+/*
+	Serial.print("raw: ");
 	Serial.println(value);
 	Serial.println();
-	delay(100);
+*/
+	delay(10);
 	if(Serial.available()){
 		value = Serial.parseInt();
 		touch.setSamples(value);

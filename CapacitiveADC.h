@@ -8,9 +8,7 @@
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY{
-
-} without even the implied warranty of
+ * but WITHOUT ANY WARRANTY without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
@@ -25,34 +23,45 @@
 #include "CapacitiveADCPin.h"
 
 struct SettingsGlobal_t{
-	uint8_t samples;
-	uint8_t debounce;
+	uint8_t samples; 					// The number of samples taken for one read
+	uint8_t debounce;					// The number of reads for a touch to be detect
 
-	uint8_t maxDelta;
-	uint8_t noiseIncrement;
-	uint8_t noiseCountRising;
-	uint8_t noiseCountFalling;
+	uint8_t maxDelta;					// Max delta for baseline adjust
+	uint8_t noiseIncrement;				// Increment for noise detection
+	uint16_t noiseCountRising;			// Number of reads above maxDelta for baseline adjust
+	uint16_t noiseCountFalling;			// Number of reads under maxDelta for baseline adjust
 
 	SettingsGlobal_t():samples(1),
 						debounce(4),
 						maxDelta(2),
 						noiseIncrement(1),
-						noiseCountRising(3),
-						noiseCountFalling(1){}
+						noiseCountRising(1600),
+						noiseCountFalling(50){}
+};
+
+struct SettingsLocal_t{
+	// Threshold values
+	int16_t touchThreshold;
+	int16_t touchReleaseThreshold;
+	int16_t proxThreshold;
+	int16_t proxReleaseThreshold;
+
+	SettingsLocal_t():touchThreshold(50),
+						touchReleaseThreshold(40),
+						proxThreshold(5),
+						proxReleaseThreshold(3){}
 };
 
 class CapacitiveADC{
 public:
 
-	enum stat_t{
+	enum state_t{
 		Idle = 0,
 		BaselineChanged,		// 1
 		Rising,					// 2
 		Falling,				// 3
-		PreProx,				// 4
-		PreTouch,				// 5
-		Prox,					// 6
-		Touch,					// 7
+		Prox,					// 4
+		Touch,					// 5
 	};
 
 	CapacitiveADC();
@@ -60,17 +69,19 @@ public:
 
 	void init(uint8_t pin, uint8_t friendPin = 0);
 
+	void autoTune();
+
 	uint16_t update();
 
 	void setChargeDelay(uint8_t value);
 
-	bool isTouched();
-	bool isJustTouched();
-	bool isJustTouchedReleased();
+	bool isTouched() const;
+	bool isJustTouched() const;
+	bool isJustTouchedReleased() const;
 
-	bool isProx();
-	bool isJustProx();
-	bool isJustProxReleased();
+	bool isProx() const;
+	bool isJustProx() const;
+	bool isJustProxReleased() const;
 
 	void setSamples(uint8_t value);
 
@@ -85,8 +96,11 @@ public:
 	void setNoiseCountRising(uint8_t value);
 	void setNoiseCountFalling(uint8_t value);
 
-	void setSettings(const SettingsGlobal_t& settings);
-	SettingsGlobal_t getSettings();
+	void applyGlobalSettings(const SettingsGlobal_t& settings);
+	SettingsGlobal_t getGlobalSettings() const;
+
+	void applyLocalSettings(const SettingsLocal_t& settings);
+	SettingsLocal_t getLocalSettings() const;
 
 protected:
 	uint16_t updateRead();
@@ -99,28 +113,16 @@ private:
 	// Global settings
 	SettingsGlobal_t *_gSettings;
 
-	// The number of samples taken for one read.
-//	uint8_t _samples; 								// Struct
-
-	// Threshold values
-	int16_t _touchThreshold;
-	int16_t _touchReleaseThreshold;
-	int16_t _proxThreshold;
-	int16_t _proxReleaseThreshold;
-
-	// Debounce value for prox or touch detection
-//	uint8_t _debounce;								// Struct
+	// Local (pin) settings
+	SettingsLocal_t _lSettings;
 
 	// values from readings
 	uint16_t _read;
 
 	// Settings for filtering
-	uint8_t _baseline;
-//	uint8_t _maxDelta;								// Struct
-//	uint8_t _noiseIncrement;						// Struct
-//	uint8_t _noiseCountRising;						// Struct
-//	uint8_t _noiseCountFalling;						// Struct
+	uint16_t _baseline;
 	uint16_t _counter;
+	uint16_t _lastTime;
 
 	// States of sensing
 	uint8_t _state;

@@ -128,6 +128,10 @@ int16_t CapacitiveADCPin::read(){
 	return value + READ_OFFSET;
 }
 
+CapacitiveADCPin::operator int16_t(){
+	return read();
+}
+
 // Private methods
 
 // Charge the electrode

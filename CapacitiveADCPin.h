@@ -43,6 +43,7 @@ public:
 	void setChargeDelay(uint8_t value);
 
 	int16_t read();
+	operator int16_t();
 
 protected:
 	void charge();
