@@ -45,17 +45,21 @@ void setup(){
 	for(uint8_t i = 0; i < numSense; ++i){
 		sense[i].setChargeDelay(5);
 		sense[i].tuneBaseline();
+		sense[i].tuneThreshold(4000);
 	}
+
+
 }
 
 void loop(){
 	int16_t value = 0;
 
 	for(uint8_t i = 0; i < numSense; ++i){
-		Serial.print(sense[i].update());
-		Serial.print('\t');
+		value = sense[i].update();
+//		Serial.print(value);
+//		Serial.print('\t');
 	}
-	Serial.println();
+//	Serial.println();
 
 	/*
 	if(value > 300){

@@ -28,7 +28,7 @@ struct SettingsGlobal_t{
 	uint8_t debounce;					// The number of reads for a touch to be detect
 
 	uint8_t noiseDelta;					// Max delta for baseline adjust
-	uint8_t expWeight;
+	uint8_t expWeight;					// Weight for exp filter. ratio, 0 to 255. fixpoint math
 	uint8_t noiseIncrement;				// Increment for noise detection
 	uint16_t noiseCountRising;			// Number of reads above noiseDelta for baseline adjust
 	uint16_t noiseCountFalling;			// Number of reads under noiseDelta for baseline adjust
@@ -37,7 +37,7 @@ struct SettingsGlobal_t{
 						divider(3),
 						debounce(20),
 						noiseDelta(2),
-						expWeight(20),
+						expWeight(45),
 						noiseIncrement(1),
 						noiseCountRising(800),
 						noiseCountFalling(10){}

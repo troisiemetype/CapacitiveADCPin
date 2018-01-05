@@ -56,6 +56,7 @@ void CapacitiveADC::tuneBaseline(){
 	value /= count;
 	_baseline = value;
 	_minBaseline = _maxBaseline = _baseline;
+	_read = _lastRead = _baseline;
 //	Serial.print("baseline:\t");
 //	Serial.println(value);
 }
@@ -85,7 +86,7 @@ void CapacitiveADC::tuneThreshold(uint32_t length){
 	uint16_t delta = _maxBaseline - _minBaseline;
 	uint16_t touch = (float)(delta * 0.4);
 	uint16_t release = (float)(touch * 0.6);
-	uint16_t prox = (float)(delta * 0.04);
+	uint16_t prox = (float)(delta * 0.05);
 	uint16_t proxRelease = (float)(prox * 0.6);
 
 	setTouchThreshold(touch);
@@ -127,11 +128,17 @@ void CapacitiveADC::tuneThreshold(uint32_t length){
 
 // launch a new read sequence.
 int16_t CapacitiveADC::update(){
-	// Update reading
+	// Update reading, save previous one.
 	_lastRead = _read;
 	_read = updateRead();
-	float filter =  (float)_read * ((float)_gSettings->expWeight / 100) +
-					(float)_lastRead * ((100 - (float)_gSettings->expWeight) / 100);
+	// Compute the exponential filter of reads.
+	// Less memory than a running average, and a bit faster to detect changes.
+//	float filter =  (float)_read * ((float)_gSettings->expWeight / 100) +
+//					(float)_lastRead * ((100 - (float)_gSettings->expWeight) / 100);
+	// Fix point math is often faster than float numbers.
+	uint32_t filter = (uint32_t)_read * _gSettings->expWeight + 
+						(uint32_t)_lastRead * (255 - _gSettings->expWeight);
+	filter /= 0xff;
 	_read = filter;
 
 	// Compute the delta between read and baseline
