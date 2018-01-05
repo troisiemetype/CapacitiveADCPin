@@ -39,7 +39,7 @@ CapacitiveADCPin::CapacitiveADCPin(){
 	#endif
 
 	// Default transfer delay
-	_transfertDelay = 6;
+	_transfertDelay = 4;
 
 	// The first reading is longer than a normal one, so let's do one.
 	while(ADCSRA & _BV(ADSC));
@@ -110,22 +110,36 @@ void CapacitiveADCPin::setChargeDelay(uint8_t value){
 int16_t CapacitiveADCPin::read(){
 	int16_t value = 0;
 	// Charge the pin
+	cli();
 	charge();
 	// Wait for the electrode to be charged.
 	delayMicroseconds(_transfertDelay);
 //	Serial.print("charge: ");
+//	Serial.print('\t');
 	// Get a reading.
 	value = share();
+//	sei();
+//	cli();
+//	Serial.println(value);
 	// Discharge the pin.
 	discharge();
 	// Wait for the electrode to be discharged.
 	delayMicroseconds(_transfertDelay);
-//	Serial.print("discharge: ");
+//	Serial.print("discharge:");
+//	Serial.print('\t');
 	// Get a reading.
 	value -= share();
+//	value |= (((int32_t)share()) << 8);
+//	value += share();
+//	value /= 2;
+//	Serial.print("charge:");
+//	Serial.print('\t');
+//	Serial.println(value);
 
+	sei();
 	// Add a fix offset to the return result, so the value is always above 0.
 	return value + READ_OFFSET;
+//	return value;
 }
 
 CapacitiveADCPin::operator int16_t(){

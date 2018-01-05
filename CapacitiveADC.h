@@ -24,19 +24,21 @@
 
 struct SettingsGlobal_t{
 	uint8_t samples; 					// The number of samples taken for one read
+	uint8_t divider;					// The number that computes the average from reads
 	uint8_t debounce;					// The number of reads for a touch to be detect
 
-	uint8_t maxDelta;					// Max delta for baseline adjust
+	uint8_t noiseDelta;					// Max delta for baseline adjust
 	uint8_t noiseIncrement;				// Increment for noise detection
-	uint16_t noiseCountRising;			// Number of reads above maxDelta for baseline adjust
-	uint16_t noiseCountFalling;			// Number of reads under maxDelta for baseline adjust
+	uint16_t noiseCountRising;			// Number of reads above noiseDelta for baseline adjust
+	uint16_t noiseCountFalling;			// Number of reads under noiseDelta for baseline adjust
 
-	SettingsGlobal_t():samples(1),
-						debounce(4),
-						maxDelta(2),
+	SettingsGlobal_t():samples(5),
+						divider(4),
+						debounce(20),
+						noiseDelta(2),
 						noiseIncrement(1),
-						noiseCountRising(1600),
-						noiseCountFalling(50){}
+						noiseCountRising(800),
+						noiseCountFalling(10){}
 };
 
 struct SettingsLocal_t{
@@ -69,9 +71,10 @@ public:
 
 	void init(uint8_t pin, uint8_t friendPin = 0);
 
-	void autoTune();
+	void tuneBaseline();
+	void tuneThreshold(uint32_t length = 5000);
 
-	uint16_t update();
+	int16_t update();
 
 	void setChargeDelay(uint8_t value);
 
@@ -83,18 +86,25 @@ public:
 	bool isJustProx() const;
 	bool isJustProxReleased() const;
 
-	void setSamples(uint8_t value);
+	uint8_t proxRatio() const;
 
-	void setTouchThreshold(uint8_t threshold);
-	void setTouchReleaseThreshold(uint8_t threshold);
-	void setProxThreshold(uint8_t threshold);
-	void setProxReleaseThreshold(uint8_t threshold);
+	void setSamples(uint8_t value);
+	void setDivider(uint8_t value);
+	void setResetDelay(uint8_t value);
+
+	void setTouchThreshold(uint16_t threshold);
+	void setTouchReleaseThreshold(uint16_t threshold);
+	void setProxThreshold(uint16_t threshold);
+	void setProxReleaseThreshold(uint16_t threshold);
 
 	void setDebounce(uint8_t value);
-	void setMaxDelta(uint8_t value);
+	void setNoiseDelta(uint8_t value);
 	void setNoiseIncrement(uint8_t value);
 	void setNoiseCountRising(uint8_t value);
 	void setNoiseCountFalling(uint8_t value);
+
+	uint16_t getBaseline();
+	uint16_t getMaxDelta();
 
 	void applyGlobalSettings(const SettingsGlobal_t& settings);
 	SettingsGlobal_t getGlobalSettings() const;
@@ -118,13 +128,18 @@ private:
 
 	// values from readings
 	uint16_t _read;
+	int16_t _delta;
 
 	// Settings for filtering
 	uint16_t _baseline;
-	uint16_t _counter;
-	uint16_t _lastTime;
+	uint16_t _minBaseline, _maxBaseline;
+	uint32_t _counter;
+	uint32_t _resetCounter;
+	uint32_t _lastTime;
 
-	// States of sensing
+	// States of sensing, instant and for reading
+	uint8_t _now;
+	uint8_t _prev;
 	uint8_t _state;
 	uint8_t _previousState;
 

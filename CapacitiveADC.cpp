@@ -24,8 +24,9 @@
 CapacitiveADC::CapacitiveADC():_baseline(200){
 	_adcPin = new CapacitiveADCPin();
 	_gSettings = new SettingsGlobal_t();
-	_state = _previousState = Idle;
+	_now = _prev = _state = _previousState = Idle;
 	_counter = 0;
+	setResetDelay(10);
 	_lastTime = millis();
 }
 
@@ -40,14 +41,13 @@ void CapacitiveADC::init(uint8_t pin, uint8_t friendPin){
 	_adcPin->init(pin, friendPin);
 }
 
-// Auto tune.
+// Tune baseline.
 // Take an amount of readings and average them to get a new baseline value.
-// TODO: modify the samples number, and charge delay.
-void CapacitiveADC::autoTune(){
-	uint16_t value = 0;
+void CapacitiveADC::tuneBaseline(){
+	uint32_t value = 0;
 	const uint8_t count = 32;
 	for(uint8_t i = 0; i < count; i++){
-		value += update();
+		value += updateRead();
 //		Serial.print("tuning...\t");
 //		Serial.println(i);
 //		Serial.println();
@@ -55,45 +55,115 @@ void CapacitiveADC::autoTune(){
 
 	value /= count;
 	_baseline = value;
+	_minBaseline = _maxBaseline = _baseline;
 //	Serial.print("baseline:\t");
 //	Serial.println(value);
-//	Serial.println("capacitive pin tuned");
+}
+
+// Tune threshold.
+// Tune baseline, then read value from electrode for a given time, compute the max delta
+// and set threshold values for touch and prox.
+void CapacitiveADC::tuneThreshold(uint32_t length){
+	tuneBaseline();
+	length += millis();
+	while(length > millis()){
+		uint16_t current = updateRead();
+		if(_minBaseline > current) _minBaseline = current;
+		if(_maxBaseline < current) _maxBaseline = current;
+/*
+		Serial.print(_baseline);
+		Serial.print('\t');
+		Serial.print(_minBaseline);
+		Serial.print('\t');
+		Serial.print(current);
+		Serial.print('\t');
+		Serial.print(_maxBaseline);
+		Serial.println();
+*/
+	}
+
+	uint16_t delta = _maxBaseline - _minBaseline;
+	uint16_t touch = (float)(delta * 0.4);
+	uint16_t release = (float)(touch * 0.6);
+	uint16_t prox = (float)(delta * 0.04);
+	uint16_t proxRelease = (float)(prox * 0.6);
+
+	setTouchThreshold(touch);
+	setTouchReleaseThreshold(release);
+	setProxThreshold(prox);
+	setProxReleaseThreshold(proxRelease);
+/*
+	Serial.println();
+
+	Serial.print("baseline:");
+	Serial.print('\t');
+	Serial.println(_baseline);
+
+	Serial.print("delta:");
+	Serial.print('\t');
+	Serial.println(delta);
+
+	Serial.print("touch:");
+	Serial.print('\t');
+	Serial.print('\t');
+	Serial.println(touch);
+
+	Serial.print("release:");
+	Serial.print('\t');
+	Serial.println(release);
+
+	Serial.print("prox:");
+	Serial.print('\t');
+	Serial.print('\t');
+	Serial.println(prox);
+
+	Serial.print("release:");
+	Serial.print('\t');
+	Serial.println(proxRelease);	
+
+	Serial.println("tuning done.");
+*/
 }
 
 // launch a new read sequence.
-uint16_t CapacitiveADC::update(){
+int16_t CapacitiveADC::update(){
 	// Update reading
 	_read = updateRead();
 
 	// Compute the delta between read and baseline
-	int16_t delta = _read - _baseline;
-	uint16_t absDelta = abs(delta);
+	_delta = _read - _baseline;
+	int16_t absDelta = abs(_delta);
 
 	// Save previous state.
-	_previousState = _state;
+	_prev = _now;
 
 	// Update baseline
-	if(absDelta <= _gSettings->maxDelta){
-		_baseline += delta;
-		_state = BaselineChanged;
+	if(absDelta <= _gSettings->noiseDelta){
+		_baseline += _delta;
+		_now = BaselineChanged;
 	// Or prepare to touch
-	} else if(delta > _lSettings.touchThreshold){
-		_state = Touch;
+	} else if(_delta > _lSettings.touchThreshold){
+		_now = Touch;
+//		Serial.println("touch");
 	// Or prepare to prox
-	} else if(delta > _lSettings.proxThreshold){
-		_state = Prox;
+	} else if(_delta > _lSettings.proxThreshold){
+		_now = Prox;
+//		Serial.println("prox");
 	// Or it's rising
-	} else if(delta > 0){
-		_state = Rising;
+	} else if(_delta > 0){
+		_now = Rising;
+//		Serial.println("rising");
 	// Or it's falling
-	} else if(delta < 0){
-		_state = Falling;
+	} else if(_delta < 0){
+		_now = Falling;
+//		Serial.println("falling");
 	// Or nothing.
 	} else {
-		_state = Idle;
+		_now = Idle;
+//		Serial.println("idle");
 	}
 
-	if(_state != _previousState){
+	if(_now != _prev){
 		_counter = 0;
 		_lastTime = millis();
 	} else {
@@ -101,41 +171,50 @@ uint16_t CapacitiveADC::update(){
 	}
 
 	// Manage touch change
-	// TODO: create a temporary state for managing transitions
-	if( _state == Touch){
-		if(delta < _lSettings.touchReleaseThreshold){
-			if(delta > _lSettings.proxReleaseThreshold){
-				_state = Prox;
+	if( _now == Touch){
+		if(millis() - _lastTime > _resetCounter) tuneBaseline();
+		if(_delta < _lSettings.touchReleaseThreshold){
+			if(_delta > _lSettings.proxReleaseThreshold){
+				_now = Prox;
 			} else {
-				_state = Idle;
+				_now = Idle;
 			}
 		}
-	} else if(_state == Prox){
-		if(delta > _lSettings.touchThreshold){
-			_state = Touch;
-		} else if(delta < _lSettings.proxReleaseThreshold){
-			_state = Idle;
+	} else if(_now == Prox){
+		if(millis() - _lastTime > _resetCounter) tuneBaseline();
+		if(_delta > _lSettings.touchThreshold){
+			_now = Touch;
+		} else if(_delta < _lSettings.proxReleaseThreshold){
+			_now = Idle;
 		}
-	} else if(_state == Rising || _state == Falling){
+	} else if(_now == Rising || _now == Falling){
 		updateCal();
 	}
-/*
-	Serial.print("baseline: ");
-	Serial.println(_baseline);
-	Serial.print("raw: ");
-	Serial.println(_read);
-	Serial.print("delta: ");
-	Serial.println(delta);
-*/
+
+	// Debounce the current instant state to see if we can use it to detect touch
+	if((_now == _prev) && ((millis() - _lastTime) > _gSettings->debounce)){
+		_previousState = _state;
+		_state = _now;
+	}
+
+//	Serial.print("baseline: ");
+//	Serial.print(_baseline);
+//	Serial.print('\t');
+//	Serial.print("raw: ");
+//	Serial.println(_read);
+//	Serial.print("delta: ");
+//	Serial.println(delta);
+
 //	Serial.print("state: ");
-//	Serial.println(_state);
+//	Serial.println(_now);
 /*
 	Serial.print("counter: ");
 	Serial.println(_counter);
 */	
 //	Serial.println();
 
-	return _read;
+//	return _read;
+	return _delta;
 }
 
 // Set the charge delay.
@@ -147,44 +226,48 @@ void CapacitiveADC::setChargeDelay(uint8_t value){
 
 // Getter for touch state
 bool CapacitiveADC::isTouched() const{
-	uint16_t timeDelta = millis() - _lastTime;
-	if(_state == Touch && timeDelta > _gSettings->debounce) return true;
+	if(_state == Touch) return true;
 	return false;
 }
 
 // Getter for touch state
 bool CapacitiveADC::isJustTouched() const{
-	uint16_t timeDelta = millis() - _lastTime;
-	if(_state == Touch && _previousState != Touch && timeDelta > _gSettings->debounce) return true;
+	if((_state == Touch) && (_previousState != Touch)) return true;
 	return false;
 }
 
 // Getter for touch state
 bool CapacitiveADC::isJustTouchedReleased() const{
-	uint16_t timeDelta = millis() - _lastTime;
-	if(_state != Touch && _previousState == Touch && timeDelta > _gSettings->debounce) return true;
+	if((_state != Touch) && (_previousState == Touch)) return true;
 	return false;
 }
 
 // Getter for prox state
 bool CapacitiveADC::isProx() const{
-	uint16_t timeDelta = millis() - _lastTime;
-	if(_state == Prox && timeDelta > _gSettings->debounce) return true;
+	if(_state == Prox) return true;
 	return false;
 }
 
 // Getter for prox state
 bool CapacitiveADC::isJustProx() const{
-	uint16_t timeDelta = millis() - _lastTime;
-	if(_state == Prox && _previousState != Prox && timeDelta > _gSettings->debounce) return true;
+	if((_state == Prox) && (_previousState != Prox)) return true;
 	return false;
 }
 
 // Getter for prox state
 bool CapacitiveADC::isJustProxReleased() const{
-	uint16_t timeDelta = millis() - _lastTime;
-	if(_state != Prox && _previousState == Prox && timeDelta > _gSettings->debounce) return true;
+	if((_state != Prox) && (_previousState == Prox)) return true;
 	return false;
+}
+
+uint8_t CapacitiveADC::proxRatio() const{
+	if(_state == Prox){
+		uint16_t deltaThre = _lSettings.touchThreshold - _lSettings.proxThreshold;
+		float ratio = 256 / (float)deltaThre;
+		uint16_t step = _delta - _lSettings.proxThreshold;
+		return (uint8_t)(step * ratio);
+	}
+	return 0;	
 }
 
 // Set the number of samples to sense for one reading.
@@ -192,23 +275,33 @@ void CapacitiveADC::setSamples(uint8_t value){
 	_gSettings->samples = value;
 }
 
+// Set the number of samples to sense for one reading.
+void CapacitiveADC::setDivider(uint8_t value){
+	_gSettings->divider = value;
+}
+
+// Set the delay (seconds) after which a touch or prox is reset to idle state
+void CapacitiveADC::setResetDelay(uint8_t value){
+	_resetCounter = (uint32_t)(value * 1000);
+}
+
 // Set touch threshold
-void CapacitiveADC::setTouchThreshold(uint8_t threshold){
+void CapacitiveADC::setTouchThreshold(uint16_t threshold){
 	_lSettings.touchThreshold = threshold;
 }
 
 // Set untouch threshold
-void CapacitiveADC::setTouchReleaseThreshold(uint8_t threshold){
+void CapacitiveADC::setTouchReleaseThreshold(uint16_t threshold){
 	_lSettings.touchReleaseThreshold = threshold;
 }
 
 // Set prox threshold
-void CapacitiveADC::setProxThreshold(uint8_t threshold){
+void CapacitiveADC::setProxThreshold(uint16_t threshold){
 	_lSettings.proxThreshold = threshold;
 }
 
 // Set unprox threshold
-void CapacitiveADC::setProxReleaseThreshold(uint8_t threshold){
+void CapacitiveADC::setProxReleaseThreshold(uint16_t threshold){
 	_lSettings.proxReleaseThreshold = threshold;
 }
 
@@ -216,8 +309,8 @@ void CapacitiveADC::setDebounce(uint8_t value){
 	_gSettings->debounce = value;
 }
 
-void CapacitiveADC::setMaxDelta(uint8_t value){
-	_gSettings->maxDelta = value;
+void CapacitiveADC::setNoiseDelta(uint8_t value){
+	_gSettings->noiseDelta = value;
 }
 
 void CapacitiveADC::setNoiseIncrement(uint8_t value){
@@ -230,6 +323,14 @@ void CapacitiveADC::setNoiseCountRising(uint8_t value){
 
 void CapacitiveADC::setNoiseCountFalling(uint8_t value){
 	_gSettings->noiseCountFalling = value;
+}
+
+uint16_t CapacitiveADC::getBaseline(){
+	return _baseline;
+}
+
+uint16_t CapacitiveADC::getMaxDelta(){
+	return (_maxBaseline - _minBaseline);
 }
 
 void CapacitiveADC::applyGlobalSettings(const SettingsGlobal_t& settings){
@@ -254,22 +355,36 @@ SettingsLocal_t CapacitiveADC::getLocalSettings() const{
 // Get a serie of readings.
 uint16_t CapacitiveADC::updateRead(){
 	int32_t value = 0;
-	for(uint8_t i = 0; i < _gSettings->samples; i++){
+	uint16_t samples = 1 << _gSettings->samples;
+	uint16_t divider = 1 << _gSettings->divider;
+
+	for(uint8_t i = 0; i < samples; ++i){
 		value += _adcPin->read();
 	}
-	value /= _gSettings->samples;
+//	Serial.print(value1);
+//	Serial.print('\t');
+//	Serial.println(value2);
+//	Serial.print("total:");
+//	Serial.print('\t');
+//	Serial.println(value);
+
+	value /= divider;
+//	Serial.print("read:");
+//	Serial.print('\t');
+//	Serial.println(value);
+
 	return (uint16_t)value;
 }
 
 void CapacitiveADC::updateCal(){
 	uint16_t timeDelta = millis() - _lastTime;
-	if(_state == Rising){
+	if(_now == Rising){
 		if(timeDelta >= _gSettings->noiseCountRising){
 			_baseline += _gSettings->noiseIncrement;
 			_counter = 0;
 			_lastTime = millis();
 		}
-	} else if(_state == Falling){
+	} else if(_now == Falling){
 		if(timeDelta >= _gSettings->noiseCountFalling){
 			_baseline -= _gSettings->noiseIncrement;
 			_counter = 0;
