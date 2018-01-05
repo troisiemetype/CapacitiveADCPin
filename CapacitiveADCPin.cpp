@@ -96,6 +96,13 @@ void CapacitiveADCPin::init(uint8_t pin, uint8_t friendPin){
 	// We init the pin tied to the ADC channel, so it can be turned HIGH or LOW when needed.
 	_dPin.init(_pin);
 	_dFriendPin.init(_friendPin);
+
+	_dPin.setDirection(OUTPUT);
+	_dPin.clear();
+	_dFriendPin.setDirection(OUTPUT);
+	_dFriendPin.clear();
+
+
 }
 
 // Set the charge delay.
@@ -135,6 +142,11 @@ int16_t CapacitiveADCPin::read(){
 //	Serial.print("charge:");
 //	Serial.print('\t');
 //	Serial.println(value);
+
+	_dPin.setDirection(OUTPUT);
+	_dPin.clear();
+	_dFriendPin.setDirection(OUTPUT);
+	_dFriendPin.clear();
 
 	sei();
 	// Add a fix offset to the return result, so the value is always above 0.

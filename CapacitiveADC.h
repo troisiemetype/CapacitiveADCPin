@@ -28,14 +28,16 @@ struct SettingsGlobal_t{
 	uint8_t debounce;					// The number of reads for a touch to be detect
 
 	uint8_t noiseDelta;					// Max delta for baseline adjust
+	uint8_t expWeight;
 	uint8_t noiseIncrement;				// Increment for noise detection
 	uint16_t noiseCountRising;			// Number of reads above noiseDelta for baseline adjust
 	uint16_t noiseCountFalling;			// Number of reads under noiseDelta for baseline adjust
 
-	SettingsGlobal_t():samples(5),
-						divider(4),
+	SettingsGlobal_t():samples(4),
+						divider(3),
 						debounce(20),
 						noiseDelta(2),
+						expWeight(20),
 						noiseIncrement(1),
 						noiseCountRising(800),
 						noiseCountFalling(10){}
@@ -128,6 +130,7 @@ private:
 
 	// values from readings
 	uint16_t _read;
+	uint16_t _lastRead;
 	int16_t _delta;
 
 	// Settings for filtering

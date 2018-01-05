@@ -128,7 +128,11 @@ void CapacitiveADC::tuneThreshold(uint32_t length){
 // launch a new read sequence.
 int16_t CapacitiveADC::update(){
 	// Update reading
+	_lastRead = _read;
 	_read = updateRead();
+	float filter =  (float)_read * ((float)_gSettings->expWeight / 100) +
+					(float)_lastRead * ((100 - (float)_gSettings->expWeight) / 100);
+	_read = filter;
 
 	// Compute the delta between read and baseline
 	_delta = _read - _baseline;
