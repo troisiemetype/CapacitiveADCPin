@@ -20,10 +20,11 @@
 
 // Public methods
 
+SettingsGlobal_t CapacitiveADC::_gSettings = SettingsGlobal_t();
+
 // Constructor
 CapacitiveADC::CapacitiveADC():_baseline(200){
 	_adcPin = new CapacitiveADCPin();
-	_gSettings = new SettingsGlobal_t();
 	_now = _prev = _state = _previousState = Idle;
 	_counter = 0;
 	setResetDelay(10);
@@ -33,7 +34,6 @@ CapacitiveADC::CapacitiveADC():_baseline(200){
 // Destructor
 CapacitiveADC::~CapacitiveADC(){
 	delete _adcPin;
-	delete _gSettings;
 }
 
 // Init the object. Tie it to used pins.
@@ -86,7 +86,7 @@ void CapacitiveADC::tuneThreshold(uint32_t length){
 	uint16_t delta = _maxBaseline - _minBaseline;
 	uint16_t touch = (float)(delta * 0.4);
 	uint16_t release = (float)(touch * 0.6);
-	uint16_t prox = (float)(delta * 0.05);
+	uint16_t prox = (float)(delta * 0.08);
 	uint16_t proxRelease = (float)(prox * 0.6);
 
 	setTouchThreshold(touch);
@@ -133,11 +133,11 @@ int16_t CapacitiveADC::update(){
 	_read = updateRead();
 	// Compute the exponential filter of reads.
 	// Less memory than a running average, and a bit faster to detect changes.
-//	float filter =  (float)_read * ((float)_gSettings->expWeight / 100) +
-//					(float)_lastRead * ((100 - (float)_gSettings->expWeight) / 100);
+//	float filter =  (float)_read * ((float)_gSettings.expWeight / 100) +
+//					(float)_lastRead * ((100 - (float)_gSettings.expWeight) / 100);
 	// Fix point math is often faster than float numbers.
-	uint32_t filter = (uint32_t)_read * _gSettings->expWeight + 
-						(uint32_t)_lastRead * (255 - _gSettings->expWeight);
+	uint32_t filter = (uint32_t)_read * _gSettings.expWeight + 
+						(uint32_t)_lastRead * (255 - _gSettings.expWeight);
 	filter /= 0xff;
 	_read = filter;
 
@@ -149,7 +149,7 @@ int16_t CapacitiveADC::update(){
 	_prev = _now;
 
 	// Update baseline
-	if(absDelta <= _gSettings->noiseDelta){
+	if(absDelta <= _gSettings.noiseDelta){
 		_baseline += _delta;
 		_now = BaselineChanged;
 	// Or prepare to touch
@@ -203,7 +203,7 @@ int16_t CapacitiveADC::update(){
 	}
 
 	// Debounce the current instant state to see if we can use it to detect touch
-	if((_now == _prev) && ((millis() - _lastTime) > _gSettings->debounce)){
+	if((_now == _prev) && ((millis() - _lastTime) > _gSettings.debounce)){
 		_previousState = _state;
 		_state = _now;
 	}
@@ -283,12 +283,12 @@ uint8_t CapacitiveADC::proxRatio() const{
 
 // Set the number of samples to sense for one reading.
 void CapacitiveADC::setSamples(uint8_t value){
-	_gSettings->samples = value;
+	_gSettings.samples = value;
 }
 
 // Set the number of samples to sense for one reading.
 void CapacitiveADC::setDivider(uint8_t value){
-	_gSettings->divider = value;
+	_gSettings.divider = value;
 }
 
 // Set the delay (seconds) after which a touch or prox is reset to idle state
@@ -317,23 +317,23 @@ void CapacitiveADC::setProxReleaseThreshold(uint16_t threshold){
 }
 
 void CapacitiveADC::setDebounce(uint8_t value){
-	_gSettings->debounce = value;
+	_gSettings.debounce = value;
 }
 
 void CapacitiveADC::setNoiseDelta(uint8_t value){
-	_gSettings->noiseDelta = value;
+	_gSettings.noiseDelta = value;
 }
 
 void CapacitiveADC::setNoiseIncrement(uint8_t value){
-	_gSettings->noiseIncrement = value;
+	_gSettings.noiseIncrement = value;
 }
 
 void CapacitiveADC::setNoiseCountRising(uint8_t value){
-	_gSettings->noiseCountRising = value;
+	_gSettings.noiseCountRising = value;
 }
 
 void CapacitiveADC::setNoiseCountFalling(uint8_t value){
-	_gSettings->noiseCountFalling = value;
+	_gSettings.noiseCountFalling = value;
 }
 
 uint16_t CapacitiveADC::getBaseline(){
@@ -345,11 +345,11 @@ uint16_t CapacitiveADC::getMaxDelta(){
 }
 
 void CapacitiveADC::applyGlobalSettings(const SettingsGlobal_t& settings){
-	*_gSettings = settings;
+	_gSettings = settings;
 }
 
 SettingsGlobal_t CapacitiveADC::getGlobalSettings() const{
-	return *_gSettings;
+	return _gSettings;
 }
 
 void CapacitiveADC::applyLocalSettings(const SettingsLocal_t& settings){
@@ -366,8 +366,8 @@ SettingsLocal_t CapacitiveADC::getLocalSettings() const{
 // Get a serie of readings.
 uint16_t CapacitiveADC::updateRead(){
 	int32_t value = 0;
-	uint16_t samples = 1 << _gSettings->samples;
-	uint16_t divider = 1 << _gSettings->divider;
+	uint16_t samples = 1 << _gSettings.samples;
+	uint16_t divider = 1 << _gSettings.divider;
 
 	for(uint8_t i = 0; i < samples; ++i){
 		value += _adcPin->read();
@@ -390,14 +390,14 @@ uint16_t CapacitiveADC::updateRead(){
 void CapacitiveADC::updateCal(){
 	uint16_t timeDelta = millis() - _lastTime;
 	if(_now == Rising){
-		if(timeDelta >= _gSettings->noiseCountRising){
-			_baseline += _gSettings->noiseIncrement;
+		if(timeDelta >= _gSettings.noiseCountRising){
+			_baseline += _gSettings.noiseIncrement;
 			_counter = 0;
 			_lastTime = millis();
 		}
 	} else if(_now == Falling){
-		if(timeDelta >= _gSettings->noiseCountFalling){
-			_baseline -= _gSettings->noiseIncrement;
+		if(timeDelta >= _gSettings.noiseCountFalling){
+			_baseline -= _gSettings.noiseIncrement;
 			_counter = 0;
 			_lastTime = millis();
 		}

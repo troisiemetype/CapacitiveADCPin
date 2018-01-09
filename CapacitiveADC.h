@@ -33,7 +33,7 @@ struct SettingsGlobal_t{
 	uint16_t noiseCountRising;			// Number of reads above noiseDelta for baseline adjust
 	uint16_t noiseCountFalling;			// Number of reads under noiseDelta for baseline adjust
 
-	SettingsGlobal_t():samples(4),
+	SettingsGlobal_t():	samples(4),
 						divider(3),
 						debounce(20),
 						noiseDelta(2),
@@ -50,7 +50,7 @@ struct SettingsLocal_t{
 	int16_t proxThreshold;
 	int16_t proxReleaseThreshold;
 
-	SettingsLocal_t():touchThreshold(50),
+	SettingsLocal_t():	touchThreshold(50),
 						touchReleaseThreshold(40),
 						proxThreshold(5),
 						proxReleaseThreshold(3){}
@@ -123,7 +123,7 @@ private:
 	CapacitiveADCPin *_adcPin;
 
 	// Global settings
-	SettingsGlobal_t *_gSettings;
+	static SettingsGlobal_t _gSettings;
 
 	// Local (pin) settings
 	SettingsLocal_t _lSettings;
