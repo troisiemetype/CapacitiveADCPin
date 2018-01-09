@@ -369,7 +369,7 @@ uint16_t CapacitiveADC::updateRead(){
 	uint16_t samples = 1 << _gSettings.samples;
 	uint16_t divider = 1 << _gSettings.divider;
 
-	for(uint8_t i = 0; i < samples; ++i){
+	for(uint16_t i = 0; i < samples; ++i){
 		value += _adcPin->read();
 	}
 //	Serial.print(value1);
