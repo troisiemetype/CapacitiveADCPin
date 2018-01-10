@@ -271,6 +271,13 @@ bool CapacitiveADC::isJustProxReleased() const{
 	return false;
 }
 
+// Getter for global release
+bool CapacitiveADC::isJustReleased() const{
+	if((_state != Touch) && (_state != Prox) && ((_previousState == Prox) || (_previousState == Touch))) return true;
+	return false;
+}
+
+
 uint8_t CapacitiveADC::proxRatio() const{
 	if(_state == Prox){
 		uint16_t deltaThre = _lSettings.touchThreshold - _lSettings.proxThreshold;

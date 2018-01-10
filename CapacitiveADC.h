@@ -88,6 +88,8 @@ public:
 	bool isJustProx() const;
 	bool isJustProxReleased() const;
 
+	bool isJustReleased() const;
+
 	uint8_t proxRatio() const;
 
 	void setSamples(uint8_t value);
