@@ -55,6 +55,7 @@ private:
 	uint8_t *_pinRPin;
 	uint8_t *_ddrRPin;
 	uint8_t _maskPin;
+	
 	uint8_t *_portRFriendPin;
 	uint8_t *_pinRFriendPin;
 	uint8_t *_ddrRFriendPin;
