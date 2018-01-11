@@ -50,10 +50,8 @@ CapacitiveADCPin::CapacitiveADCPin(){
 // Init method: affect a pin to the object.
 void CapacitiveADCPin::init(uint8_t pin, uint8_t friendPin){
 	// Get a local copy of the pin numbers
-	_pin = pin;
-	_friendPin = friendPin;
-	_channel = _pin;
-	_friendChannel = _friendPin;
+	_channel = pin;
+	_friendChannel = friendPin;
 
 	// Here we translate the (digital) pin number into analog.
 	// As with Arduino's analogRead(), the class can be passed a pin number in either:
@@ -81,7 +79,7 @@ void CapacitiveADCPin::init(uint8_t pin, uint8_t friendPin){
 	// Configure the friend pin, that will be used to charge the s&h internal capacitor.
 	if(_friendChannel == 0 && _channel == 0){
 		++_friendChannel;
-		++_friendPin;
+		++friendPin;
 	}
 
 	// For Atmega 32u4 (leonardo, micro) only: map the analog pin number to ADC channel.
@@ -94,14 +92,21 @@ void CapacitiveADCPin::init(uint8_t pin, uint8_t friendPin){
 	// As we will need to charge and discharge it before to get a reading
 
 
-	// We init the pin tied to the ADC channel, so it can be turned HIGH or LOW when needed.
-	_dPin.init(_pin);
-	_dFriendPin.init(_friendPin);
+	// We init the pin tied to the ADC channels.
+	// As we will use direct port addressing, we have to set registers used in Arduino's variant files.
+	uint8_t reg = digitalPinToPort(pin);
+	_maskPin = digitalPinToBitMask(pin);
 
-	_dPin.setDirection(OUTPUT);
-	_dPin.clear();
-	_dFriendPin.setDirection(OUTPUT);
-	_dFriendPin.clear();
+	_portRPin = (uint8_t*)portOutputRegister(reg);
+	_pinRPin = (uint8_t*)portInputRegister(reg);
+	_ddrRPin = (uint8_t*)portModeRegister(reg);	
+
+	reg = digitalPinToPort(friendPin);
+	_maskFriendPin = digitalPinToBitMask(friendPin);
+
+	_portRFriendPin = (uint8_t*)portOutputRegister(reg);
+	_pinRFriendPin = (uint8_t*)portInputRegister(reg);
+	_ddrRFriendPin = (uint8_t*)portModeRegister(reg);
 
 }
 
@@ -162,9 +167,10 @@ int16_t CapacitiveADCPin::read(){
 //	Serial.print('\t');
 //	Serial.println(value);
 
-	_dPin.setDirection(OUTPUT);
-	_dPin.clear();
-	_dFriendPin.clear();
+	*_ddrRPin |= _maskPin;
+	*_portRPin &= ~_maskPin;
+	*_ddrRFriendPin |= _maskFriendPin;
+	*_portRFriendPin &= ~_maskFriendPin;
 
 //	Serial.println(micros() - length);
 
@@ -188,13 +194,13 @@ void CapacitiveADCPin::charge(){
 //	setMux(ADC_GND);
 	uint32_t length = micros();
 	setMux(_friendChannel);
-	_dFriendPin.setDirection(OUTPUT);
-	_dFriendPin.clear();
+	*_ddrRFriendPin |= _maskFriendPin;
+	*_portRFriendPin &= ~_maskFriendPin;
 //	Serial.println(micros() - length);
 
 	// Charge the electrode.
-	_dPin.setDirection(OUTPUT);
-	_dPin.set();
+	*_ddrRPin |= _maskPin;
+	*_portRPin |= _maskPin;
 //	Serial.println(micros() - length);
 }
 
@@ -205,11 +211,11 @@ void CapacitiveADCPin::charge(){
 void CapacitiveADCPin::discharge(){
 	// Charge the ADC.
 	setMux(_friendChannel);
-	_dFriendPin.setDirection(OUTPUT);
-	_dFriendPin.set();
+	*_ddrRFriendPin |= _maskFriendPin;
+	*_portRFriendPin |= _maskFriendPin;
 	// Discharge the electrode.
-	_dPin.setDirection(OUTPUT);
-	_dPin.clear();
+	*_ddrRPin |= _maskPin;
+	*_portRPin &= ~_maskPin;
 }
 
 // Share connect the electrode to its ADC channel.
@@ -219,7 +225,8 @@ void CapacitiveADCPin::discharge(){
 uint16_t CapacitiveADCPin::share(){
 	uint16_t value = 0;
 	// Set the pin to intput, three-stated.
-	_dPin.setDirection(INPUT);
+	*_ddrRPin &= ~_maskPin;
+	*_portRPin &= ~_maskPin;
 	// Set the ADC channel to that pin.
 	setMux(_channel);
 	// Launch a conversion, and wait for it to be done.

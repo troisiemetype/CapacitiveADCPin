@@ -22,7 +22,6 @@
 #define CAPACITIVE_ADC_PIN_H
 
 #include <Arduino.h>
-#include "DigitalPin.h"
 
 #if defined(MUX5)
 #define ADC_MUX_GND		0x1F
@@ -52,10 +51,15 @@ protected:
 	uint8_t _transfertDelay;
 
 private:
-	DigitalPin _dPin;
-	DigitalPin _dFriendPin;
-	uint8_t _pin;
-	uint8_t _friendPin;
+	uint8_t *_portRPin;
+	uint8_t *_pinRPin;
+	uint8_t *_ddrRPin;
+	uint8_t _maskPin;
+	uint8_t *_portRFriendPin;
+	uint8_t *_pinRFriendPin;
+	uint8_t *_ddrRFriendPin;
+	uint8_t _maskFriendPin;
+
 
 	uint8_t _channel;
 	uint8_t _friendChannel;
