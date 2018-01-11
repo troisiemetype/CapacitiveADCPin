@@ -116,15 +116,24 @@ void CapacitiveADCPin::setChargeDelay(uint8_t value){
 // Read function.
 int16_t CapacitiveADCPin::read(){
 	int16_t value = 0;
+//	uint32_t length = micros();
 	// Charge the pin
-	cli();
+//	cli();
+//	length = micros();
 	charge();
 	// Wait for the electrode to be charged.
 	delayMicroseconds(_transfertDelay);
 //	Serial.print("charge: ");
 //	Serial.print('\t');
 	// Get a reading.
+//	Serial.print('\t');
+//	Serial.println(micros() - length);
+//	length = micros();
+
 	value = share();
+//	Serial.print('\t');
+//	Serial.println(micros() - length);
+//	length = micros();
 //	sei();
 //	cli();
 //	Serial.println(value);
@@ -135,7 +144,12 @@ int16_t CapacitiveADCPin::read(){
 //	Serial.print("discharge:");
 //	Serial.print('\t');
 	// Get a reading.
+//	Serial.print('\t');
+//	Serial.println(micros() - length);
+//	length = micros();
 	value -= share();
+//	Serial.print('\t');
+//	Serial.println(micros() - length);
 //	value |= (((int32_t)share()) << 8);
 //	value += share();
 //	value /= 2;
@@ -148,7 +162,7 @@ int16_t CapacitiveADCPin::read(){
 	_dFriendPin.setDirection(OUTPUT);
 	_dFriendPin.clear();
 
-	sei();
+//	sei();
 	// Add a fix offset to the return result, so the value is always above 0.
 	return value + READ_OFFSET;
 //	return value;

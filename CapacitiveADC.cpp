@@ -86,7 +86,7 @@ void CapacitiveADC::tuneThreshold(uint32_t length){
 	uint16_t delta = _maxBaseline - _minBaseline;
 	uint16_t touch = (float)(delta * 0.4);
 	uint16_t release = (float)(touch * 0.6);
-	uint16_t prox = (float)(delta * 0.08);
+	uint16_t prox = (float)(delta * 0.04);
 	uint16_t proxRelease = (float)(prox * 0.6);
 
 	setTouchThreshold(touch);
@@ -130,7 +130,11 @@ void CapacitiveADC::tuneThreshold(uint32_t length){
 int16_t CapacitiveADC::update(){
 	// Update reading, save previous one.
 	_lastRead = _read;
+//	uint32_t length = micros();
+//	Serial.println("u1");
+//	Serial.print('\t');
 	_read = updateRead();
+//	length = micros();
 	// Compute the exponential filter of reads.
 	// Less memory than a running average, and a bit faster to detect changes.
 //	float filter =  (float)_read * ((float)_gSettings.expWeight / 100) +
@@ -225,6 +229,10 @@ int16_t CapacitiveADC::update(){
 //	Serial.println();
 
 //	return _read;
+//	length = micros() - length;
+//	Serial.print("u3");
+//	Serial.print('\t');
+//	Serial.println(length);
 	return _delta;
 }
 
@@ -375,10 +383,13 @@ uint16_t CapacitiveADC::updateRead(){
 	int32_t value = 0;
 	uint16_t samples = 1 << _gSettings.samples;
 	uint16_t divider = 1 << _gSettings.divider;
+//	uint32_t length = micros();
 
 	for(uint8_t i = 0; i < samples; ++i){
 		value += _adcPin->read();
 	}
+
+//	Serial.println(micros() - length);
 //	Serial.print(value1);
 //	Serial.print('\t');
 //	Serial.println(value2);

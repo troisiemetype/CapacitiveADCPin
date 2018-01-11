@@ -37,7 +37,7 @@ struct SettingsGlobal_t{
 						divider(3),
 						debounce(20),
 						noiseDelta(2),
-						expWeight(45),
+						expWeight(40),
 						noiseIncrement(1),
 						noiseCountRising(800),
 						noiseCountFalling(10){}
