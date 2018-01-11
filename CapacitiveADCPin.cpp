@@ -115,6 +115,10 @@ void CapacitiveADCPin::setChargeDelay(uint8_t value){
 
 // Read function.
 int16_t CapacitiveADCPin::read(){
+	ADMUX |= _BV(5);
+	ADCSRA = 0b11000001;
+//	ADCSRB |= _BV(7);
+
 	int16_t value = 0;
 //	uint32_t length = micros();
 	// Charge the pin
@@ -150,7 +154,7 @@ int16_t CapacitiveADCPin::read(){
 	value -= share();
 //	Serial.print('\t');
 //	Serial.println(micros() - length);
-//	value |= (((int32_t)share()) << 8);
+//	value |= ((share()) << 8);
 //	value += share();
 //	value /= 2;
 //	Serial.print("charge:");
@@ -164,8 +168,8 @@ int16_t CapacitiveADCPin::read(){
 
 //	sei();
 	// Add a fix offset to the return result, so the value is always above 0.
-	return value + READ_OFFSET;
-//	return value;
+//	return value + READ_OFFSET;
+	return value;
 }
 
 CapacitiveADCPin::operator int16_t(){
@@ -179,7 +183,10 @@ CapacitiveADCPin::operator int16_t(){
 // Then charge the electrode by setting it to output HIGH.
 void CapacitiveADCPin::charge(){
 	// Discharge the ADC s&h cap by linking it to ground.
-	setMux(ADC_GND);
+//	setMux(ADC_GND);
+	setMux(_friendChannel);
+	_dFriendPin.setDirection(OUTPUT);
+	_dFriendPin.clear();
 	// Charge the electrode.
 	_dPin.setDirection(OUTPUT);
 	_dPin.set();
@@ -211,10 +218,12 @@ uint16_t CapacitiveADCPin::share(){
 	setMux(_channel);
 	// Launch a conversion, and wait for it to be done.
 	ADCSRA |= _BV(ADSC);
+
 	while(ADCSRA & _BV(ADSC));
 
-	value = ADCL;
-	value |= (ADCH << 8);
+//	value = ADCL;
+//	value |= (ADCH << 8);
+	value = ADCH;
 
 //	Serial.println(value);
 

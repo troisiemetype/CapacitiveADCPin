@@ -43,11 +43,13 @@ void CapacitiveADC::init(uint8_t pin, uint8_t friendPin){
 
 // Tune baseline.
 // Take an amount of readings and average them to get a new baseline value.
-void CapacitiveADC::tuneBaseline(){
+void CapacitiveADC::tuneBaseline(uint32_t length){
 	uint32_t value = 0;
-	const uint8_t count = 32;
-	for(uint8_t i = 0; i < count; i++){
+	uint16_t count = 0;
+	length += millis();
+	while(length > millis()){
 		value += updateRead();
+		++count;
 //		Serial.print("tuning...\t");
 //		Serial.println(i);
 //		Serial.println();
@@ -134,6 +136,8 @@ int16_t CapacitiveADC::update(){
 //	Serial.println("u1");
 //	Serial.print('\t');
 	_read = updateRead();
+//	Serial.print(_read);
+//	Serial.print('\t');
 //	length = micros();
 	// Compute the exponential filter of reads.
 	// Less memory than a running average, and a bit faster to detect changes.
@@ -144,6 +148,8 @@ int16_t CapacitiveADC::update(){
 						(uint32_t)_lastRead * (255 - _gSettings.expWeight);
 	filter /= 0xff;
 	_read = filter;
+
+//	Serial.println(_read);
 
 	// Compute the delta between read and baseline
 	_delta = _read - _baseline;
@@ -216,9 +222,11 @@ int16_t CapacitiveADC::update(){
 //	Serial.print(_baseline);
 //	Serial.print('\t');
 //	Serial.print("raw: ");
-//	Serial.println(_read);
+//	Serial.print(_read);
+//	Serial.print('\t');
+//	Serial.println(_state * 64);
 //	Serial.print("delta: ");
-//	Serial.println(delta);
+//	Serial.println(_delta);
 
 //	Serial.print("state: ");
 //	Serial.println(_now);
@@ -381,12 +389,17 @@ SettingsLocal_t CapacitiveADC::getLocalSettings() const{
 // Get a serie of readings.
 uint16_t CapacitiveADC::updateRead(){
 	int32_t value = 0;
+//	int32_t value1 = 0;
+//	int32_t value2 = 0;
 	uint16_t samples = 1 << _gSettings.samples;
 	uint16_t divider = 1 << _gSettings.divider;
 //	uint32_t length = micros();
 
 	for(uint8_t i = 0; i < samples; ++i){
 		value += _adcPin->read();
+//		value = _adcPin->read();
+//		value1 += value & 0xff;
+//		value2 += (value & 0xff00) >> 8;
 	}
 
 //	Serial.println(micros() - length);

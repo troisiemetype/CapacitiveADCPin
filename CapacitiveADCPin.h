@@ -32,8 +32,6 @@
 
 #define ADC_GND 		0xFF
 
-#define READ_OFFSET 	0xFF
-
 class CapacitiveADCPin{
 public:
 	CapacitiveADCPin();

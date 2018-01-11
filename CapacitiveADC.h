@@ -26,21 +26,21 @@ struct SettingsGlobal_t{
 	uint8_t samples; 					// The number of samples taken for one read
 	uint8_t divider;					// The number that computes the average from reads
 	uint8_t debounce;					// The number of reads for a touch to be detect
+	uint8_t expWeight;					// Weight for exp filter. ratio, 0 to 255. fixpoint math
 
 	uint8_t noiseDelta;					// Max delta for baseline adjust
-	uint8_t expWeight;					// Weight for exp filter. ratio, 0 to 255. fixpoint math
 	uint8_t noiseIncrement;				// Increment for noise detection
 	uint16_t noiseCountRising;			// Number of reads above noiseDelta for baseline adjust
 	uint16_t noiseCountFalling;			// Number of reads under noiseDelta for baseline adjust
 
-	SettingsGlobal_t():	samples(4),
-						divider(3),
+	SettingsGlobal_t():	samples(5),
+						divider(2),
 						debounce(20),
-						noiseDelta(2),
 						expWeight(40),
+						noiseDelta(0),
 						noiseIncrement(1),
-						noiseCountRising(800),
-						noiseCountFalling(10){}
+						noiseCountRising(50),
+						noiseCountFalling(5){}
 };
 
 struct SettingsLocal_t{
@@ -73,7 +73,7 @@ public:
 
 	void init(uint8_t pin, uint8_t friendPin = 0);
 
-	void tuneBaseline();
+	void tuneBaseline(uint32_t length = 1000);
 	void tuneThreshold(uint32_t length = 5000);
 
 	int16_t update();
