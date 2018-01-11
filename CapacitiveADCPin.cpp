@@ -93,6 +93,7 @@ void CapacitiveADCPin::init(uint8_t pin, uint8_t friendPin){
 	// We don't need to init the ADC mux now,
 	// As we will need to charge and discharge it before to get a reading
 
+
 	// We init the pin tied to the ADC channel, so it can be turned HIGH or LOW when needed.
 	_dPin.init(_pin);
 	_dFriendPin.init(_friendPin);
@@ -101,7 +102,6 @@ void CapacitiveADCPin::init(uint8_t pin, uint8_t friendPin){
 	_dPin.clear();
 	_dFriendPin.setDirection(OUTPUT);
 	_dFriendPin.clear();
-
 
 }
 
@@ -116,8 +116,9 @@ void CapacitiveADCPin::setChargeDelay(uint8_t value){
 // Read function.
 int16_t CapacitiveADCPin::read(){
 	ADMUX |= _BV(5);
-	ADCSRA = 0b11000001;
-//	ADCSRB |= _BV(7);
+	ADCSRA &= ~0b111;
+	ADCSRA |= 0b001;
+	ADCSRB |= _BV(7);
 
 	int16_t value = 0;
 //	uint32_t length = micros();
@@ -163,8 +164,9 @@ int16_t CapacitiveADCPin::read(){
 
 	_dPin.setDirection(OUTPUT);
 	_dPin.clear();
-	_dFriendPin.setDirection(OUTPUT);
 	_dFriendPin.clear();
+
+//	Serial.println(micros() - length);
 
 //	sei();
 	// Add a fix offset to the return result, so the value is always above 0.
@@ -184,12 +186,16 @@ CapacitiveADCPin::operator int16_t(){
 void CapacitiveADCPin::charge(){
 	// Discharge the ADC s&h cap by linking it to ground.
 //	setMux(ADC_GND);
+	uint32_t length = micros();
 	setMux(_friendChannel);
 	_dFriendPin.setDirection(OUTPUT);
 	_dFriendPin.clear();
+//	Serial.println(micros() - length);
+
 	// Charge the electrode.
 	_dPin.setDirection(OUTPUT);
 	_dPin.set();
+//	Serial.println(micros() - length);
 }
 
 // Discharge the electrode
@@ -218,8 +224,11 @@ uint16_t CapacitiveADCPin::share(){
 	setMux(_channel);
 	// Launch a conversion, and wait for it to be done.
 	ADCSRA |= _BV(ADSC);
+//	uint32_t length = micros();
 
 	while(ADCSRA & _BV(ADSC));
+
+//	Serial.println(micros() - length);
 
 //	value = ADCL;
 //	value |= (ADCH << 8);
@@ -236,19 +245,19 @@ void CapacitiveADCPin::setMux(uint8_t channel){
 	// Set channel number to 0
 	ADMUX &= ~(0x1F);
 
-	// Tie ADC to ground for discharging
+/*	// Tie ADC to ground for discharging
 	if(channel == ADC_GND){
 		ADMUX |= ADC_MUX_GND;
 	#if defined(MUX5)
 		ADCSRB &= ~_BV(MUX5);
 	#endif
 
-	} else {
+	} else { */
 		// Set channel to right channel number
 		ADMUX |= (channel & 0x07);
 	#if defined(MUX5)
 		ADCSRB |= (ADCSRB & ~_BV(MUX5)) | (((channel >> 3) & 0x01) << MUX5);
 	#endif
-	}
+//	}
 
 }

@@ -395,8 +395,10 @@ uint16_t CapacitiveADC::updateRead(){
 	uint16_t divider = 1 << _gSettings.divider;
 //	uint32_t length = micros();
 
-	for(uint8_t i = 0; i < samples; ++i){
+	for(uint16_t i = 0; i < samples; ++i){
+//		length = micros();
 		value += _adcPin->read();
+//		Serial.println(micros() - length);
 //		value = _adcPin->read();
 //		value1 += value & 0xff;
 //		value2 += (value & 0xff00) >> 8;
