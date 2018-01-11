@@ -33,8 +33,8 @@ struct SettingsGlobal_t{
 	uint16_t noiseCountRising;			// Number of reads above noiseDelta for baseline adjust
 	uint16_t noiseCountFalling;			// Number of reads under noiseDelta for baseline adjust
 
-	SettingsGlobal_t():	samples(5),
-						divider(2),
+	SettingsGlobal_t():	samples(4),
+						divider(1),
 						debounce(20),
 						expWeight(40),
 						noiseDelta(0),

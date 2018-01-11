@@ -8,9 +8,7 @@
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY{
-
-} without even the implied warranty of
+ * but WITHOUT ANY WARRANTY without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
@@ -23,13 +21,6 @@
 
 #include <Arduino.h>
 
-#if defined(MUX5)
-#define ADC_MUX_GND		0x1F
-#else
-#define ADC_MUX_GND		0x0F
-#endif
-
-#define ADC_GND 		0xFF
 
 class CapacitiveADCPin{
 public:
@@ -40,12 +31,9 @@ public:
 	void setChargeDelay(uint8_t value);
 
 	int16_t read();
-	operator int16_t();
 
 protected:
-	void charge();
-	void discharge();
-	uint16_t share();
+//	uint8_t share();
 	void setMux(uint8_t channel);
 
 	uint8_t _transfertDelay;
