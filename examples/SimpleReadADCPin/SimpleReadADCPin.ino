@@ -18,7 +18,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "CapacitiveADCPin.h"
+#include "CapacitiveADCChannel.h"
 #include "DigitalPin.h"
 
 const uint8_t readPin = A0;
@@ -26,7 +26,7 @@ const uint8_t friendPin = A1;
 
 const uint8_t ledPin = 13;
 
-CapacitiveADCPin touchChannel;
+CapacitiveADCChannel touchChannel;
 DigitalPin lampe;
 
 void setup(){

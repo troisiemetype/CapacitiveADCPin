@@ -20,7 +20,7 @@
 #define CAPACITIVE_ADC_H
 
 #include <Arduino.h>
-#include "CapacitiveADCPin.h"
+#include "CapacitiveADCChannel.h"
 
 struct SettingsGlobal_t{
 	uint8_t samples; 					// The number of samples taken for one read
@@ -68,47 +68,20 @@ public:
 		Touch,					// 5
 	};
 
-	CapacitiveADC();
-	~CapacitiveADC();
-
-	void init(uint8_t pin, uint8_t friendPin = 0);
-
-	void tuneBaseline(uint32_t length = 1000);
-	void tuneThreshold(uint32_t length = 5000);
-
-	int16_t update();
-
 	void setChargeDelay(uint8_t value);
-
-	bool isTouched() const;
-	bool isJustTouched() const;
-	bool isJustTouchedReleased() const;
-
-	bool isProx() const;
-	bool isJustProx() const;
-	bool isJustProxReleased() const;
-
-	bool isJustReleased() const;
-
-	uint8_t proxRatio() const;
 
 	void setSamples(uint8_t value);
 	void setDivider(uint8_t value);
 	void setResetDelay(uint8_t value);
 
-	void setTouchThreshold(uint16_t threshold);
-	void setTouchReleaseThreshold(uint16_t threshold);
-	void setProxThreshold(uint16_t threshold);
-	void setProxReleaseThreshold(uint16_t threshold);
+	virtual void setTouchThreshold(uint16_t threshold);
+	virtual void setTouchReleaseThreshold(uint16_t threshold);
 
 	void setDebounce(uint8_t value);
 	void setNoiseDelta(uint8_t value);
 	void setNoiseIncrement(uint8_t value);
 	void setNoiseCountRising(uint8_t value);
 	void setNoiseCountFalling(uint8_t value);
-
-	uint16_t getBaseline();
-	uint16_t getMaxDelta();
 
 	void applyGlobalSettings(const SettingsGlobal_t& settings);
 	SettingsGlobal_t getGlobalSettings() const;
@@ -117,12 +90,9 @@ public:
 	SettingsLocal_t getLocalSettings() const;
 
 protected:
-	uint16_t updateRead();
-	void updateCal();
 
-private:
 	// The pin linked to this capacitive channel
-	CapacitiveADCPin *_adcPin;
+	CapacitiveADCChannel *_adcChannel;
 
 	// Global settings
 	static SettingsGlobal_t _gSettings;
@@ -130,23 +100,7 @@ private:
 	// Local (pin) settings
 	SettingsLocal_t _lSettings;
 
-	// values from readings
-	uint16_t _read;
-	uint16_t _lastRead;
-	int16_t _delta;
-
-	// Settings for filtering
-	uint16_t _baseline;
-	uint16_t _minBaseline, _maxBaseline;
-	uint32_t _counter;
 	uint32_t _resetCounter;
-	uint32_t _lastTime;
-
-	// States of sensing, instant and for reading
-	uint8_t _now;
-	uint8_t _prev;
-	uint8_t _state;
-	uint8_t _previousState;
 
 };
 

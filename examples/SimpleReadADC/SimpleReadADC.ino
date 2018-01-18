@@ -18,7 +18,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "CapacitiveADC.h"
+#include "CapacitiveADCPin.h"
 #include "DigitalPin.h"
 
 const uint8_t readPin = A0;
@@ -26,7 +26,7 @@ const uint8_t friendPin = A1;
 
 const uint8_t ledPin = 13;
 
-CapacitiveADC touch;
+CapacitiveADCPin touch;
 DigitalPin lampe;
 
 void setup(){
@@ -34,7 +34,7 @@ void setup(){
 
 	touch.init(readPin, friendPin);
 	touch.setChargeDelay(5);
-	touch.autoTune();
+	touch.tuneBaseline();
 	lampe.init(ledPin, OUTPUT);
 	lampe = 0;
 }

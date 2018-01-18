@@ -20,38 +20,71 @@
 #define CAPACITIVE_ADC_PIN_H
 
 #include <Arduino.h>
+#include "CapacitiveADC.h"
 
-
-class CapacitiveADCPin{
+class CapacitiveADCPin: public CapacitiveADC{
 public:
+
 	CapacitiveADCPin();
+	~CapacitiveADCPin();
 
 	void init(uint8_t pin, uint8_t friendPin = 0);
 
-	void setChargeDelay(uint8_t value);
+	void tuneBaseline(uint32_t length = 1000);
+	void tuneThreshold(uint32_t length = 5000);
 
-	int16_t read();
+	int16_t update();
+
+	bool isTouched() const;
+	bool isJustTouched() const;
+	bool isJustTouchedReleased() const;
+
+	bool isProx() const;
+	bool isJustProx() const;
+	bool isJustProxReleased() const;
+
+	bool isJustReleased() const;
+
+	uint8_t proxRatio() const;
+
+	void setProxThreshold(uint16_t threshold);
+	void setProxReleaseThreshold(uint16_t threshold);
+
+	uint16_t getBaseline();
+	uint16_t getMaxDelta();
+
+//	void applyLocalSettings(const SettingsLocal_t& settings);
+//	SettingsLocal_t getLocalSettings() const;
 
 protected:
-//	uint8_t share();
-	void setMux(uint8_t channel);
+	uint16_t updateRead();
+	void updateCal();
 
-	uint8_t _transfertDelay;
+	// The pin linked to this capacitive channel
+	CapacitiveADCChannel *_adcChannel;
 
-private:
-	uint8_t *_portRPin;
-	uint8_t *_pinRPin;
-	uint8_t *_ddrRPin;
-	uint8_t _maskPin;
-	
-	uint8_t *_portRFriendPin;
-	uint8_t *_pinRFriendPin;
-	uint8_t *_ddrRFriendPin;
-	uint8_t _maskFriendPin;
+/*
+	// Local (pin) settings
+	SettingsLocal_t _lSettings;
+*/
+	// values from readings
+	uint16_t _read;
+	uint16_t _lastRead;
+	int16_t _delta;
 
+	// Settings for filtering
+	uint16_t _baseline;
+	uint16_t _minBaseline, _maxBaseline;
+	uint32_t _counter;
+	uint32_t _resetCounter;
+	uint32_t _lastTime;
 
-	uint8_t _channel;
-	uint8_t _friendChannel;
+	// States of sensing, instant and for reading
+	uint8_t _now;
+	uint8_t _prev;
+	uint8_t _state;
+	uint8_t _previousState;
+
 };
 
 #endif

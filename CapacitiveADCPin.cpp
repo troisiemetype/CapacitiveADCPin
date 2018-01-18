@@ -21,240 +21,280 @@
 // Public methods
 
 // Constructor
-CapacitiveADCPin::CapacitiveADCPin(){
-	// Definition for ADC, when more than 8 ADC channels (Atmega 32u4, 2560, etc.)
-	#if defined(MUX5)
-	ADMUX = 0b01011111;
-	ADCSRA = 0b11000110;
-	ADCSRB = 0b00000000;
-
-	// Definition for ADC, when 8 ADC Channels or less (ATmega 328p)
-	#else
-	ADMUX = 0b01001111;
-	ADCSRA = 0b11000110;
-	ADCSRB = 0b00000000;
-
-	#endif
-
-	// Default transfer delay
-	_transfertDelay = 4;
-
-	// The first reading is longer than a normal one, so let's do one.
-	while(ADCSRA & _BV(ADSC));
-
+CapacitiveADCPin::CapacitiveADCPin():_baseline(200){
+	_adcChannel = new CapacitiveADCChannel();
+	_now = _prev = _state = _previousState = Idle;
+	_counter = 0;
+	setResetDelay(10);
+	_lastTime = millis();
 }
 
+// Destructor
+CapacitiveADCPin::~CapacitiveADCPin(){
+	delete _adcChannel;
+}
 
-// Init method: affect a pin to the object.
+// Init the object. Tie it to used pins.
 void CapacitiveADCPin::init(uint8_t pin, uint8_t friendPin){
-	// Get a local copy of the pin numbers
-	_channel = pin;
-	_friendChannel = friendPin;
+	_adcChannel->init(pin, friendPin);
+}
 
-	// Here we translate the (digital) pin number into analog.
-	// As with Arduino's analogRead(), the class can be passed a pin number in either:
-	// channel number (1 - 5 for Uno)
-	// pin number (14 - 19 for Uno)
-	// analog pin number (A0 - A5 for Uno)
-	// NOTA: on nano, analog A6 and A7 would be digital pins 20 and 21, that dont exist.
-#if defined(__AVR_ATmega32U4__)
-	if(_channel >= 18) _channel -= 18;
-	if(_friendChannel >= 18) _friendChannel -= 18;
-#elif defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)
-	if(_channel >= 54) _channel -= 54;
-	if(_friendChannel >= 54) _friendChannel -= 54;
-#elif defined(__AVR_ATmega1284__) || defined(__AVR_ATmega1284P__) || defined(__AVR_ATmega644__)
-	if(_channel >= 24) _channel -= 24;
-	if(_friendChannel >= 24) _friendChannel -= 24;
-#else
-	if(_channel >= 14) _channel -= 14;
-	if(_friendChannel >= 14) _friendChannel -= 14;
-#endif
-
-	// Control that this ADC channel exists
-	if(_channel >= NUM_ANALOG_INPUTS || _friendChannel >= NUM_ANALOG_INPUTS) return;
-
-	// Configure the friend pin, that will be used to charge the s&h internal capacitor.
-	if(_friendChannel == 0 && _channel == 0){
-		++_friendChannel;
-		++friendPin;
+// Tune baseline.
+// Take an amount of readings and average them to get a new baseline value.
+void CapacitiveADCPin::tuneBaseline(uint32_t length){
+	uint32_t value = 0;
+	uint16_t count = 0;
+	length += millis();
+	while(length > millis()){
+		value += (uint32_t)updateRead();
+		++count;
+//		Serial.print("tuning...\t");
+//		Serial.println(i);
+//		Serial.println();
 	}
 
-	// For Atmega 32u4 (leonardo, micro) only: map the analog pin number to ADC channel.
-#if defined(__AVR_ATmega32U4__)
-	_channel = analogPinToChannel(_channel);
-	_friendChannel = analogPinToChannel(_friendChannel);
-#endif
-
-	// We don't need to init the ADC mux now,
-	// As we will need to charge and discharge it before to get a reading
-
-
-	// We init the pin tied to the ADC channels.
-	// As we will use direct port addressing, we have to set registers used in Arduino's variant files.
-	uint8_t reg = digitalPinToPort(pin);
-	_maskPin = digitalPinToBitMask(pin);
-
-	_portRPin = (uint8_t*)portOutputRegister(reg);
-	_pinRPin = (uint8_t*)portInputRegister(reg);
-	_ddrRPin = (uint8_t*)portModeRegister(reg);	
-
-	reg = digitalPinToPort(friendPin);
-	_maskFriendPin = digitalPinToBitMask(friendPin);
-
-	_portRFriendPin = (uint8_t*)portOutputRegister(reg);
-	_pinRFriendPin = (uint8_t*)portInputRegister(reg);
-	_ddrRFriendPin = (uint8_t*)portModeRegister(reg);
-
-	// Turn both pin OUTPUT, LOW.
-	*_ddrRPin |= _maskPin;
-	*_portRPin &= ~_maskPin;
-	*_ddrRFriendPin |= _maskFriendPin;
-	*_portRFriendPin &= ~_maskFriendPin;
-
-	// Set the ADC registers here, because analogRead initialise after third party libraries.
-#if defined(MUX5)
-	ADMUX = 0b01011111;
-	ADCSRA = 0b10000001;
-	ADCSRB = 0b00000000;
-
-	// Definition for ADC, when 8 ADC Channels or less (ATmega 328p)
-#else
-	ADMUX = 0b01001111;
-	ADCSRA = 0b10000001;
-	ADCSRB = 0b00000000;
-
-#endif
-
-	// Left justified result (we only read the 8 upper bits)
-	ADMUX |= _BV(5);
-
+	value /= count;
+	_baseline = value;
+	_minBaseline = _maxBaseline = _baseline;
+	_read = _lastRead = _baseline;
 }
 
-// Set the charge delay.
-// This is the minimal delay for the charge to transfer from electrode to s&h capacitor,
-// back and forth.
-void CapacitiveADCPin::setChargeDelay(uint8_t value){
-	_transfertDelay = value;
+// Tune threshold.
+// Tune baseline, then read value from electrode for a given time, compute the max delta
+// and set threshold values for touch and prox.
+void CapacitiveADCPin::tuneThreshold(uint32_t length){
+	tuneBaseline();
+	length += millis();
+	while(length > millis()){
+		uint16_t current = updateRead();
+		if(_minBaseline > current) _minBaseline = current;
+		if(_maxBaseline < current) _maxBaseline = current;
+
+	}
+
+	uint16_t delta = _maxBaseline - _minBaseline;
+	uint16_t touch = (float)(delta * 0.4);
+	uint16_t release = (float)(touch * 0.6);
+	uint16_t prox = (float)(delta * 0.04);
+	uint16_t proxRelease = (float)(prox * 0.7);
+
+	setTouchThreshold(touch);
+	setTouchReleaseThreshold(release);
+	setProxThreshold(prox);
+	setProxReleaseThreshold(proxRelease);
 }
 
-
-// Read function.
-int16_t CapacitiveADCPin::read(){
-//	ADMUX |= _BV(5);
-//	ADCSRA &= ~0b111;
-//	ADCSRA |= 0b001;
-//	ADCSRB |= _BV(7);
-
-	int16_t value = 0;
+// launch a new read sequence.
+int16_t CapacitiveADCPin::update(){
+	// Update reading, save previous one.
+	_lastRead = _read;
 //	uint32_t length = micros();
-	// Charge the pin
-	// Discharge the ADC s&h cap by linking it to ground.
-	setMux(_friendChannel);
-	// Turn friend pin OUTPUT, LOW
-//	*_ddrRFriendPin |= _maskFriendPin;
-	*_portRFriendPin &= ~_maskFriendPin;
+//	Serial.println("u1");
+//	Serial.print('\t');
+	_read = updateRead();
+//	Serial.print(_read);
+//	Serial.print('\t');
+//	length = micros();
+	// Compute the exponential filter of reads.
+	// Less memory than a running average, and a bit faster to detect changes.
+//	float filter =  (float)_read * ((float)_gSettings.expWeight / 100) +
+//					(float)_lastRead * ((100 - (float)_gSettings.expWeight) / 100);
+	// Fix point math is faster than float numbers.
+	uint32_t filter = (uint32_t)_read * _gSettings.expWeight + 
+						(uint32_t)_lastRead * (255 - _gSettings.expWeight);
+	filter /= 0xff;
+	_read = filter;
 
-	// Charge the electrode.
-	// Turn pin OUTPUT, HIGH.
-//	*_ddrRPin |= _maskPin;
-	*_portRPin |= _maskPin;
-	// Wait for the electrode to be charged.
-//	delayMicroseconds(_transfertDelay);
+//	Serial.println(_read);
 
-	// Set the pin to input, three-stated.
-	*_ddrRPin &= ~_maskPin;
-	*_portRPin &= ~_maskPin;
-	// Set the ADC channel to that pin.
-	setMux(_channel);
-	// Launch a conversion, and wait for it to be done.
-	ADCSRA |= _BV(ADSC);
+	// Compute the delta between read and baseline
+	_delta = (int16_t)_read - (int16_t)_baseline;
+//	Serial.println(_delta);
+	int32_t absDelta = abs(_delta);
 
-	// Wait at least one ADC clock cycle before to change ADMUX.
-	asm volatile(
-		"NOP"	"\n\t"
-		"NOP"	"\n\t"
-		"NOP"	"\n\t"
-		"NOP"	"\n\t"
-		);
+	// Save previous state.
+	_prev = _now;
 
+	// Update baseline
+	if(absDelta <= _gSettings.noiseDelta){
+		_baseline += _delta;
+		_now = BaselineChanged;
+	// Or prepare to touch
+	} else if(_delta > _lSettings.touchThreshold){
+		_now = Touch;
+//		Serial.println("touch");
+	// Or prepare to prox
+	} else if(_delta > _lSettings.proxThreshold){
+		_now = Prox;
+//		Serial.println("prox");
+	// Or it's rising
+	} else if(_delta > 0){
+		_now = Rising;
+//		Serial.println("rising");
+	// Or it's falling
+	} else if(_delta < 0){
+		_now = Falling;
+//		Serial.println("falling");
+	// Or nothing.
+	} else {
+		_now = Idle;
+//		Serial.println("idle");
+	}
 
-	// Set the next (we can change it before conversion it's done as ADMUX is buffered)
-	setMux(_friendChannel);
+	if(_now != _prev){
+		_counter = 0;
+		_lastTime = millis();
+	} else {
+		++_counter;
+	}
 
-	while(ADCSRA & _BV(ADSC));
+	// Manage touch change
+	if( _now == Touch){
+		if(millis() - _lastTime > _resetCounter) tuneBaseline();
+		if(_delta < _lSettings.touchReleaseThreshold){
+			if(_delta > _lSettings.proxReleaseThreshold){
+				_now = Prox;
+			} else {
+				_now = Idle;
+			}
+		}
+	} else if(_now == Prox){
+		if(millis() - _lastTime > _resetCounter) tuneBaseline();
+		if(_delta > _lSettings.touchThreshold){
+			_now = Touch;
+		} else if(_delta < _lSettings.proxReleaseThreshold){
+			_now = Idle;
+		}
+	} else if(_now == Rising || _now == Falling){
+		updateCal();
+	}
 
-	// Get value from reading.
-	value = ADCH;
+	// Debounce the current instant state to see if we can use it to detect touch
+	if((_now == _prev) && ((millis() - _lastTime) > _gSettings.debounce)){
+		_previousState = _state;
+		_state = _now;
+	}
 
-	// Turn friend pin OUTPUT, HIGH
-//	*_ddrRFriendPin |= _maskFriendPin;
-	*_portRFriendPin |= _maskFriendPin;
-	// Discharge the electrode.
-	// Turn pin OUTPUT, LOW.
-	*_ddrRPin |= _maskPin;
-	*_portRPin &= ~_maskPin;
-	// Wait for the electrode to be discharged.
-//	delayMicroseconds(_transfertDelay);
-
-//	value -= share();
-	// Turn pin INPUT, three-stated
-	*_ddrRPin &= ~_maskPin;
-	*_portRPin &= ~_maskPin;
-	// Set the ADC channel to that pin.
-	setMux(_channel);
-	// Launch a conversion, and wait for it to be done.
-	ADCSRA |= _BV(ADSC);
-
-	while(ADCSRA & _BV(ADSC));
-
-	value -= ADCH;
-
-	*_ddrRPin |= _maskPin;
-	*_portRPin &= ~_maskPin;
-//	*_ddrRFriendPin |= _maskFriendPin;
-	*_portRFriendPin &= ~_maskFriendPin;
-
-	return value;
+	return _delta;
 }
 
-// Private methods
+// Getter for touch state
+bool CapacitiveADCPin::isTouched() const{
+	if(_state == Touch) return true;
+	return false;
+}
+
+// Getter for touch state
+bool CapacitiveADCPin::isJustTouched() const{
+	if((_state == Touch) && (_previousState != Touch)) return true;
+	return false;
+}
+
+// Getter for touch state
+bool CapacitiveADCPin::isJustTouchedReleased() const{
+	if((_state != Touch) && (_previousState == Touch)) return true;
+	return false;
+}
+
+// Getter for prox state
+bool CapacitiveADCPin::isProx() const{
+	if(_state == Prox) return true;
+	return false;
+}
+
+// Getter for prox state
+bool CapacitiveADCPin::isJustProx() const{
+	if((_state == Prox) && (_previousState != Prox)) return true;
+	return false;
+}
+
+// Getter for prox state
+bool CapacitiveADCPin::isJustProxReleased() const{
+	if((_state != Prox) && (_previousState == Prox)) return true;
+	return false;
+}
+
+// Getter for global release
+bool CapacitiveADCPin::isJustReleased() const{
+	if((_state != Touch) && (_state != Prox) && ((_previousState == Prox) || (_previousState == Touch))) return true;
+	return false;
+}
+
+
+uint8_t CapacitiveADCPin::proxRatio() const{
+	if(_state == Prox){
+		uint16_t deltaThre = _lSettings.touchThreshold - _lSettings.proxThreshold;
+		float ratio = 256 / (float)deltaThre;
+		uint16_t step = _delta - _lSettings.proxThreshold;
+		return (uint8_t)(step * ratio);
+	} else if(_state == Touch){
+		return 0xff;
+	}
+	
+	return 0;	
+}
+
+// Set prox threshold
+void CapacitiveADCPin::setProxThreshold(uint16_t threshold){
+	_lSettings.proxThreshold = threshold;
+}
+
+// Set unprox threshold
+void CapacitiveADCPin::setProxReleaseThreshold(uint16_t threshold){
+	_lSettings.proxReleaseThreshold = threshold;
+}
+
+uint16_t CapacitiveADCPin::getBaseline(){
+	return _baseline;
+}
+
+uint16_t CapacitiveADCPin::getMaxDelta(){
+	return (_maxBaseline - _minBaseline);
+}
+
 /*
-// Share connect the electrode to its ADC channel.
-// This is about the same as an analogRead():
-// Set the pin to input (three-stated), then connect ADC mux,
-// and start a conversion.
-uint8_t CapacitiveADCPin::share(){
-	uint8_t value = 0;
-	// Set the pin to input, three-stated.
-	*_ddrRPin &= ~_maskPin;
-	*_portRPin &= ~_maskPin;
-	// Set the ADC channel to that pin.
-	setMux(_channel);
-	// Launch a conversion, and wait for it to be done.
-	ADCSRA |= _BV(ADSC);
-//	uint32_t length = micros();
+void CapacitiveADCPin::applyLocalSettings(const SettingsLocal_t& settings){
+	_lSettings = settings;
+}
 
-	while(ADCSRA & _BV(ADSC));
-
-//	Serial.println(micros() - length);
-
-//	value = ADCL;
-//	value |= (ADCH << 8);
-	value = ADCH;
-
-	return value;
+SettingsLocal_t CapacitiveADCPin::getLocalSettings() const{
+	return _lSettings;
 }
 */
-// Set the ADC to a channel.
-// That can be ground for discharging, electrode pin for reading, or friend pin for charging.
-void CapacitiveADCPin::setMux(uint8_t channel){
-	// Set channel number to 0
-	ADMUX &= ~(0x1F);
 
-	// Set channel to right channel number
-	ADMUX |= (channel & 0x07);
-#if defined(MUX5)
-	ADCSRB |= (ADCSRB & ~_BV(MUX5)) | (((channel >> 3) & 0x01) << MUX5);
-#endif
+// Protected methods
+
+// Update the baseline value
+void CapacitiveADCPin::updateCal(){
+	uint16_t timeDelta = millis() - _lastTime;
+	if(_now == Rising){
+		if(timeDelta >= _gSettings.noiseCountRising){
+			_baseline += _gSettings.noiseIncrement;
+			_counter = 0;
+			_lastTime = millis();
+		}
+	} else if(_now == Falling){
+		if(timeDelta >= _gSettings.noiseCountFalling){
+			_baseline -= _gSettings.noiseIncrement;
+			_counter = 0;
+			_lastTime = millis();
+		}
+	}
+
+}
+
+// Get a serie of readings.
+uint16_t CapacitiveADCPin::updateRead(){
+	int32_t value = 0;
+	uint16_t samples = 1 << _gSettings.samples;
+	uint16_t divider = 1 << _gSettings.divider;
+
+	for(uint16_t i = 0; i < samples; ++i){
+		value += _adcChannel->read();
+	}
+
+	value /= divider;
+
+
+	return (uint16_t)value;
 }

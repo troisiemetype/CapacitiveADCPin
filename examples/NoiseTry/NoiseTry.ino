@@ -18,7 +18,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "CapacitiveADC.h"
+#include "CapacitiveADCPin.h"
 #include "DigitalPin.h"
 
 
@@ -28,7 +28,7 @@ const uint8_t SENSE3 = A2;
 const uint8_t SENSE4 = A1;
 
 const uint8_t numSense = 1;
-CapacitiveADC sense[numSense];
+CapacitiveADCPin sense[numSense];
 
 void setup(){
 

@@ -1,0 +1,71 @@
+#######################################
+# Syntax Coloring Map For CapacitiveADC
+#######################################
+
+#######################################
+# Datatypes (KEYWORD)
+#######################################
+
+CapacitiveADC				KEYWORD1
+state_t						KEYWORD1
+SettingsLocal_t				KEYWORD1
+SettingsGlobal_t			KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD)
+#######################################
+
+
+CapacitiveADC				KEYWORD2
+~CapacitiveADC				KEYWORD2
+
+init						KEYWORD2
+
+tuneBaseline				KEYWORD2
+tuneThreshold				KEYWORD2
+
+update						KEYWORD2
+
+setChargeDelay				KEYWORD2
+
+isTouched 					KEYWORD2
+isJustTouched 				KEYWORD2
+isJustTouchedReleased 		KEYWORD2
+
+isProx 						KEYWORD2
+isJustProx 					KEYWORD2
+isJustProxReleased 			KEYWORD2
+
+isJustReleased 				KEYWORD2
+
+proxRatio 					KEYWORD2
+
+setSamples 					KEYWORD2
+setDivider 					KEYWORD2
+setResetDelay				KEYWORD2
+
+setTouchThreshold 			KEYWORD2
+setTouchReleaseThreshold 	KEYWORD2
+setProxThreshold 			KEYWORD2
+setProxReleaseThreshold 	KEYWORD2
+
+setDebounce					KEYWORD2
+setNoiseDelta 				KEYWORD2
+setNoiseIncrement 			KEYWORD2
+setNoiseCountRising 		KEYWORD2
+setNoiseCountFalling
+
+getBaseline 				KEYWORD2
+getMaxDelta 				KEYWORD2
+
+applyGlobalSettings 		KEYWORD2
+getGlobalSettings 			KEYWORD2
+
+applyLocalSettings 			KEYWORD2
+getLocalSettings 			KEYWORD2
+
+read 						KEYWORD2
+
+#######################################
+# Constants (LITERAL
+#######################################
