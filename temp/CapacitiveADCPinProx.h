@@ -30,9 +30,6 @@ public:
 
 	void init(uint8_t pin, uint8_t friendPin = 0);
 
-	void setChargeDelay(uint8_t value);
-
-
 	void tuneBaseline(uint32_t length = 1000);
 	void tuneThreshold(uint32_t length = 5000);
 
@@ -40,7 +37,18 @@ public:
 
 	bool isTouched() const;
 	bool isJustTouched() const;
+	bool isJustTouchedReleased() const;
+
+	bool isProx() const;
+	bool isJustProx() const;
+	bool isJustProxReleased() const;
+
 	bool isJustReleased() const;
+
+	uint8_t proxRatio() const;
+
+	void setProxThreshold(uint16_t threshold);
+	void setProxReleaseThreshold(uint16_t threshold);
 
 	uint16_t getBaseline();
 	uint16_t getMaxDelta();
@@ -52,7 +60,7 @@ protected:
 	uint16_t updateRead();
 	void updateCal();
 
-	// The pin linked to this capacitive channel;
+	// The pin linked to this capacitive channel
 	CapacitiveADCChannel *_adcChannel;
 
 /*
@@ -67,6 +75,8 @@ protected:
 	// Settings for filtering
 	uint16_t _baseline;
 	uint16_t _maxDelta;
+	uint32_t _counter;
+	uint32_t _resetCounter;
 	uint32_t _lastTime;
 
 	// States of sensing, instant and for reading

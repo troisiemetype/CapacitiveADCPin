@@ -24,7 +24,8 @@
 CapacitiveADCPin::CapacitiveADCPin():_baseline(200){
 	_adcChannel = new CapacitiveADCChannel();
 	_now = _prev = _state = _previousState = Idle;
-	_lSettings.resetCounter = 10;
+	_counter = 0;
+	setResetDelay(10);
 	_lastTime = millis();
 }
 
@@ -37,12 +38,6 @@ CapacitiveADCPin::~CapacitiveADCPin(){
 void CapacitiveADCPin::init(uint8_t pin, uint8_t friendPin){
 	_adcChannel->init(pin, friendPin);
 }
-
-// change the charge delay for this channel
-void CapacitiveADCPin::setChargeDelay(uint8_t value){
-	_adcChannel->setChargeDelay(value);
-}
-
 
 // Tune baseline.
 // Take an amount of readings and average them to get a new baseline value.
@@ -81,9 +76,13 @@ void CapacitiveADCPin::tuneThreshold(uint32_t length){
 	_maxDelta = _maxBaseline - _minBaseline;
 	uint16_t touch = (float)(_maxDelta * 0.4);
 	uint16_t release = (float)(touch * 0.6);
+	uint16_t prox = (float)(_maxDelta * 0.04);
+	uint16_t proxRelease = (float)(prox * 0.7);
 
 	setTouchThreshold(touch);
-	setReleaseThreshold(release);
+	setTouchReleaseThreshold(release);
+	setProxThreshold(prox);
+	setProxReleaseThreshold(proxRelease);
 }
 
 // launch a new read sequence.
@@ -111,14 +110,24 @@ int16_t CapacitiveADCPin::update(){
 
 	// Compute the delta between read and baseline
 	_delta = (int16_t)_read - (int16_t)_baseline;
+//	Serial.println(_delta);
+	int32_t absDelta = abs(_delta);
 
 	// Save previous state.
 	_prev = _now;
 
-	// Prepare to touch
-	if(_delta > _lSettings.touchThreshold){
+	// Update baseline
+	if(absDelta <= _gSettings.noiseDelta){
+		_baseline += _delta;
+		_now = BaselineChanged;
+	// Or prepare to touch
+	} else if(_delta > _lSettings.touchThreshold){
 		_now = Touch;
 //		Serial.println("touch");
+	// Or prepare to prox
+	} else if(_delta > _lSettings.proxThreshold){
+		_now = Prox;
+//		Serial.println("prox");
 	// Or it's rising
 	} else if(_delta > 0){
 		_now = Rising;
@@ -133,9 +142,33 @@ int16_t CapacitiveADCPin::update(){
 //		Serial.println("idle");
 	}
 
-	if(_now != _prev) _lastTime = millis();
+	if(_now != _prev){
+		_counter = 0;
+		_lastTime = millis();
+	} else {
+		++_counter;
+	}
 
-	if(_now == Rising || _now == Falling) updateCal();
+	// Manage touch change
+	if( _now == Touch){
+		if(millis() - _lastTime > _resetCounter) tuneBaseline();
+		if(_delta < _lSettings.touchReleaseThreshold){
+			if(_delta > _lSettings.proxReleaseThreshold){
+				_now = Prox;
+			} else {
+				_now = Idle;
+			}
+		}
+	} else if(_now == Prox){
+		if(millis() - _lastTime > _resetCounter) tuneBaseline();
+		if(_delta > _lSettings.touchThreshold){
+			_now = Touch;
+		} else if(_delta < _lSettings.proxReleaseThreshold){
+			_now = Idle;
+		}
+	} else if(_now == Rising || _now == Falling){
+		updateCal();
+	}
 
 	// Debounce the current instant state to see if we can use it to detect touch
 	if((_now == _prev) && ((millis() - _lastTime) > _gSettings.debounce)){
@@ -159,9 +192,57 @@ bool CapacitiveADCPin::isJustTouched() const{
 }
 
 // Getter for touch state
-bool CapacitiveADCPin::isJustReleased() const{
+bool CapacitiveADCPin::isJustTouchedReleased() const{
 	if((_state != Touch) && (_previousState == Touch)) return true;
 	return false;
+}
+
+// Getter for prox state
+bool CapacitiveADCPin::isProx() const{
+	if(_state == Prox) return true;
+	return false;
+}
+
+// Getter for prox state
+bool CapacitiveADCPin::isJustProx() const{
+	if((_state == Prox) && (_previousState != Prox)) return true;
+	return false;
+}
+
+// Getter for prox state
+bool CapacitiveADCPin::isJustProxReleased() const{
+	if((_state != Prox) && (_previousState == Prox)) return true;
+	return false;
+}
+
+// Getter for global release
+bool CapacitiveADCPin::isJustReleased() const{
+	if((_state != Touch) && (_state != Prox) && ((_previousState == Prox) || (_previousState == Touch))) return true;
+	return false;
+}
+
+
+uint8_t CapacitiveADCPin::proxRatio() const{
+	if(_state == Prox){
+		uint16_t deltaThre = _lSettings.touchThreshold - _lSettings.proxThreshold;
+		float ratio = 256 / (float)deltaThre;
+		uint16_t step = _delta - _lSettings.proxThreshold;
+		return (uint8_t)(step * ratio);
+	} else if(_state == Touch){
+		return 0xff;
+	}
+	
+	return 0;	
+}
+
+// Set prox threshold
+void CapacitiveADCPin::setProxThreshold(uint16_t threshold){
+	_lSettings.proxThreshold = threshold;
+}
+
+// Set unprox threshold
+void CapacitiveADCPin::setProxReleaseThreshold(uint16_t threshold){
+	_lSettings.proxReleaseThreshold = threshold;
 }
 
 uint16_t CapacitiveADCPin::getBaseline(){
@@ -190,11 +271,13 @@ void CapacitiveADCPin::updateCal(){
 	if(_now == Rising){
 		if(timeDelta >= _gSettings.noiseCountRising){
 			_baseline += _gSettings.noiseIncrement;
+			_counter = 0;
 			_lastTime = millis();
 		}
 	} else if(_now == Falling){
 		if(timeDelta >= _gSettings.noiseCountFalling){
 			_baseline -= _gSettings.noiseIncrement;
+			_counter = 0;
 			_lastTime = millis();
 		}
 	}

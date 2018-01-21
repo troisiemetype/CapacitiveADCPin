@@ -36,6 +36,8 @@ public:
 //	void init(uint8_t pin0, uint8_t pin1, uint8_t pin2, uint8_t pin3, uint8_t pin4);
 //	void init(uint8_t pin0, uint8_t pin1, uint8_t pin2, uint8_t pin3, uint8_t pin4, uint8_t pin5);
 
+	void setChargeDelay(uint8_t value);
+
 	void tuneBaseline(uint32_t length = 200);
 	void tuneThreshold(uint32_t length = 2000);
 
@@ -70,8 +72,7 @@ protected:
 
 	// Settings for filtering
 	uint16_t _baseline[MAX_SLIDER_CHANNEL + 1];
-//	uint16_t _minBaseline, _maxBaseline;
-	uint32_t _resetCounter[MAX_SLIDER_CHANNEL + 1];
+	uint8_t _resetCounter[MAX_SLIDER_CHANNEL + 1];
 	uint32_t _lastTime[MAX_SLIDER_CHANNEL + 1];
 
 	// States of sensing, instant and for reading

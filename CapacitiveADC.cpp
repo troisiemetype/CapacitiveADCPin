@@ -20,29 +20,9 @@
 
 // Public methods
 
+// We initialize global settings once for all instances.
 SettingsGlobal_t CapacitiveADC::_gSettings = SettingsGlobal_t();
 
-// Set the charge delay.
-// This is the minimal delay for the charge to transfer from electrode to s&h capacitor,
-// back and forth.
-void CapacitiveADC::setChargeDelay(uint8_t value){
-	_adcChannel->setChargeDelay(value);
-}
-
-// Set the number of samples to sense for one reading.
-void CapacitiveADC::setSamples(uint8_t value){
-	_gSettings.samples = value;
-}
-
-// Set the number of samples to sense for one reading.
-void CapacitiveADC::setDivider(uint8_t value){
-	_gSettings.divider = value;
-}
-
-// Set the delay (seconds) after which a touch or prox is reset to idle state
-void CapacitiveADC::setResetDelay(uint8_t value){
-	_lSettings.resetCounter = (uint32_t)(value * 1000);
-}
 
 // Set touch threshold
 void CapacitiveADC::setTouchThreshold(uint16_t threshold){
@@ -50,42 +30,26 @@ void CapacitiveADC::setTouchThreshold(uint16_t threshold){
 }
 
 // Set untouch threshold
-void CapacitiveADC::setTouchReleaseThreshold(uint16_t threshold){
-	_lSettings.touchReleaseThreshold = threshold;
+void CapacitiveADC::setReleaseThreshold(uint16_t threshold){
+	_lSettings.releaseThreshold = threshold;
 }
 
-void CapacitiveADC::setDebounce(uint8_t value){
-	_gSettings.debounce = value;
-}
-
-void CapacitiveADC::setNoiseDelta(uint8_t value){
-	_gSettings.noiseDelta = value;
-}
-
-void CapacitiveADC::setNoiseIncrement(uint8_t value){
-	_gSettings.noiseIncrement = value;
-}
-
-void CapacitiveADC::setNoiseCountRising(uint16_t value){
-	_gSettings.noiseCountRising = value;
-}
-
-void CapacitiveADC::setNoiseCountFalling(uint16_t value){
-	_gSettings.noiseCountFalling = value;
-}
-
+// This is how we acceed to global setting (that all instances share),
+// As samples, divider, noise count, etc.
 void CapacitiveADC::applyGlobalSettings(const SettingsGlobal_t& settings){
 	_gSettings = settings;
 }
 
+// A getter for the global setting struct, to be modified.
 SettingsGlobal_t CapacitiveADC::getGlobalSettings() const{
 	return _gSettings;
 }
-
+// Same for the local settings (threshold and reset delay). Getter
 void CapacitiveADC::applyLocalSettings(const SettingsLocal_t& settings){
 	_lSettings = settings;
 }
 
+// And setter, that we use once we have modified the values.
 SettingsLocal_t CapacitiveADC::getLocalSettings() const{
 	return _lSettings;
 }

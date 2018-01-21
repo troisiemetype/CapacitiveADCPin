@@ -28,7 +28,7 @@ CapacitiveADCSlider::CapacitiveADCSlider(){
 		_numChannels = 0;
 	}
 
-	setResetDelay(60);
+	_lSettings.resetCounter = 60;
 	_position = _prevPosition = _nowPosition = _step = 0;
 	_coeff = 32;
 }
@@ -152,6 +152,13 @@ void CapacitiveADCSlider::init(uint8_t pin0, uint8_t pin1, uint8_t pin2, uint8_t
 }
 */
 
+// change the charge delay for this channel
+void CapacitiveADCSlider::setChargeDelay(uint8_t value){
+	for(uint8_t i = 0; i < _numChannels; ++i){
+		_adcChannel[i]->setChargeDelay(value);
+	}
+}
+
 // Tune baseline.
 // Take an amount of readings and average them to get a new baseline value.
 void CapacitiveADCSlider::tuneBaseline(uint32_t length){
@@ -207,7 +214,7 @@ void CapacitiveADCSlider::tuneThreshold(uint32_t length){
 	uint16_t release = (float)(touch * 0.6);
 
 	setTouchThreshold(touch);
-	setTouchReleaseThreshold(release);
+	setReleaseThreshold(release);
 }
 
 // launch a new read sequence.

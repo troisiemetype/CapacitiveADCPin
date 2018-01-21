@@ -38,39 +38,7 @@ public:
 
 protected:
 	bool updatePosition(void);
-/*
-	// The pin linked to this capacitive channel
-	CapacitiveADCChannel* _adcChannel[MAX_SLIDER_CHANNEL];
 
-	uint8_t _numChannels;
-
-	// Local (pin) settings
-	SettingsLocal_t _lSettings;
-
-	// values from readings
-	uint16_t _currentRead[MAX_SLIDER_CHANNEL + 1];
-	uint16_t _previousRead[MAX_SLIDER_CHANNEL + 1];
-	int16_t _delta[MAX_SLIDER_CHANNEL + 1];
-
-	// Settings for filtering
-	uint16_t _baseline[MAX_SLIDER_CHANNEL + 1];
-//	uint16_t _minBaseline, _maxBaseline;
-	uint32_t _resetCounter[MAX_SLIDER_CHANNEL + 1];
-	uint32_t _lastTime[MAX_SLIDER_CHANNEL + 1];
-
-	// States of sensing, instant and for reading
-	uint8_t _nowState[MAX_SLIDER_CHANNEL + 1];
-	uint8_t _prevState[MAX_SLIDER_CHANNEL + 1];
-	uint8_t _state[MAX_SLIDER_CHANNEL + 1];
-	uint8_t _previousState[MAX_SLIDER_CHANNEL + 1];
-
-	int8_t _nowPosition, _prevPosition, _position;
-	int8_t _step;
-
-	int8_t _weighting[MAX_SLIDER_CHANNEL];
-
-	uint8_t _coeff;
-	*/
 };
 
 #endif

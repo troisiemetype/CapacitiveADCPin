@@ -28,7 +28,7 @@ CapacitiveADCWheel::CapacitiveADCWheel(){
 		_numChannels = 0;
 	}
 
-	setResetDelay(60);
+	_lSettings.resetCounter = 60;
 	_position = _prevPosition = _nowPosition = _step = 0;
 	_coeff = 83;
 }

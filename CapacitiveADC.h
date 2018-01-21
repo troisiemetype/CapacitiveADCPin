@@ -25,19 +25,16 @@
 struct SettingsGlobal_t{
 	uint8_t samples; 					// The number of samples taken for one read
 	uint8_t divider;					// The number that computes the average from reads
-	uint8_t debounce;					// The number of reads for a touch to be detect
 	uint8_t expWeight;					// Weight for exp filter. ratio, 0 to 255. fixpoint math
-
-	uint8_t noiseDelta;					// Max delta for baseline adjust
+	uint8_t debounce;					// Delay to wait before a touch is effectively accounted
 	uint8_t noiseIncrement;				// Increment for noise detection
 	uint16_t noiseCountRising;			// Number of reads above noiseDelta for baseline adjust
 	uint16_t noiseCountFalling;			// Number of reads under noiseDelta for baseline adjust
 
 	SettingsGlobal_t():	samples(4),
 						divider(1),
-						debounce(20),
 						expWeight(40),
-						noiseDelta(0),
+						debounce(2),
 						noiseIncrement(1),
 						noiseCountRising(50),
 						noiseCountFalling(5){}
@@ -46,16 +43,12 @@ struct SettingsGlobal_t{
 struct SettingsLocal_t{
 	// Threshold values
 	int16_t touchThreshold;
-	int16_t touchReleaseThreshold;
-	int16_t proxThreshold;
-	int16_t proxReleaseThreshold;
-	uint32_t resetCounter;
+	int16_t releaseThreshold;
+	uint8_t resetCounter;
 
 	SettingsLocal_t():	touchThreshold(50),
-						touchReleaseThreshold(40),
-						proxThreshold(5),
-						proxReleaseThreshold(3),
-						resetCounter(255000L){}
+						releaseThreshold(40),
+						resetCounter(255){}
 };
 
 class CapacitiveADC{
@@ -70,20 +63,10 @@ public:
 		Touch,					// 5
 	};
 
-	void setChargeDelay(uint8_t value);
-
-	void setSamples(uint8_t value);
-	void setDivider(uint8_t value);
-	void setResetDelay(uint8_t value);
+	virtual void setChargeDelay(uint8_t value) = 0;
 
 	virtual void setTouchThreshold(uint16_t threshold);
-	virtual void setTouchReleaseThreshold(uint16_t threshold);
-
-	void setDebounce(uint8_t value);
-	void setNoiseDelta(uint8_t value);
-	void setNoiseIncrement(uint8_t value);
-	void setNoiseCountRising(uint16_t value);
-	void setNoiseCountFalling(uint16_t value);
+	virtual void setReleaseThreshold(uint16_t threshold);
 
 	void applyGlobalSettings(const SettingsGlobal_t& settings);
 	SettingsGlobal_t getGlobalSettings() const;
@@ -92,9 +75,6 @@ public:
 	SettingsLocal_t getLocalSettings() const;
 
 protected:
-
-	// The pin linked to this capacitive channel
-	CapacitiveADCChannel *_adcChannel;
 
 	// Global settings
 	static SettingsGlobal_t _gSettings;
