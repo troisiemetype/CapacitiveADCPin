@@ -41,7 +41,7 @@ void CapacitiveADC::setDivider(uint8_t value){
 
 // Set the delay (seconds) after which a touch or prox is reset to idle state
 void CapacitiveADC::setResetDelay(uint8_t value){
-	_resetCounter = (uint32_t)(value * 1000);
+	_lSettings.resetCounter = (uint32_t)(value * 1000);
 }
 
 // Set touch threshold
@@ -66,11 +66,11 @@ void CapacitiveADC::setNoiseIncrement(uint8_t value){
 	_gSettings.noiseIncrement = value;
 }
 
-void CapacitiveADC::setNoiseCountRising(uint8_t value){
+void CapacitiveADC::setNoiseCountRising(uint16_t value){
 	_gSettings.noiseCountRising = value;
 }
 
-void CapacitiveADC::setNoiseCountFalling(uint8_t value){
+void CapacitiveADC::setNoiseCountFalling(uint16_t value){
 	_gSettings.noiseCountFalling = value;
 }
 

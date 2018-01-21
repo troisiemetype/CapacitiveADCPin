@@ -49,11 +49,13 @@ struct SettingsLocal_t{
 	int16_t touchReleaseThreshold;
 	int16_t proxThreshold;
 	int16_t proxReleaseThreshold;
+	uint32_t resetCounter;
 
 	SettingsLocal_t():	touchThreshold(50),
 						touchReleaseThreshold(40),
 						proxThreshold(5),
-						proxReleaseThreshold(3){}
+						proxReleaseThreshold(3),
+						resetCounter(255000L){}
 };
 
 class CapacitiveADC{
@@ -80,8 +82,8 @@ public:
 	void setDebounce(uint8_t value);
 	void setNoiseDelta(uint8_t value);
 	void setNoiseIncrement(uint8_t value);
-	void setNoiseCountRising(uint8_t value);
-	void setNoiseCountFalling(uint8_t value);
+	void setNoiseCountRising(uint16_t value);
+	void setNoiseCountFalling(uint16_t value);
 
 	void applyGlobalSettings(const SettingsGlobal_t& settings);
 	SettingsGlobal_t getGlobalSettings() const;
@@ -99,8 +101,6 @@ protected:
 
 	// Local (pin) settings
 	SettingsLocal_t _lSettings;
-
-	uint32_t _resetCounter;
 
 };
 

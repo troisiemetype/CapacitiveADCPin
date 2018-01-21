@@ -18,7 +18,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "CapacitiveADCPin.h"
+#include "CapacitiveADCChannel.h"
 #include "DigitalPin.h"
 
 const uint8_t readPin = A0;
@@ -26,41 +26,29 @@ const uint8_t friendPin = A1;
 
 const uint8_t ledPin = 13;
 
-CapacitiveADCPin touch;
+CapacitiveADCChannel touchChannel;
 DigitalPin lampe;
 
 void setup(){
 	Serial.begin(115200);
 
-	touch.init(readPin, friendPin);
-	touch.setChargeDelay(5);
-	touch.tuneBaseline();
+	touchChannel.init(readPin, friendPin);
 	lampe.init(ledPin, OUTPUT);
 	lampe = 0;
 }
 
 void loop(){
 	int16_t value = 0;
-	value = touch.update();
-
-	lampe = touch.isProx();
-
-	/*
+	value = touchChannel.read();
+//	value = touchChannel;				// operator overloading
 	if(value > 300){
 		lampe = 1;
 	} else {
 		lampe = 0;
 	}
-	*/
-/*
-	Serial.print("raw: ");
+	Serial.print("delta: ");
 	Serial.println(value);
 	Serial.println();
-*/
-	delay(10);
-	if(Serial.available()){
-		value = Serial.parseInt();
-		touch.setSamples(value);
-	}
+	delay(100);
 
 }

@@ -1,5 +1,5 @@
 /*
- * This is a demo sketch for capacitives pins, using ADC.
+ * This is a demo sketch for capacitives slider, using ADC.
  * Copyright (C) 2017  Pierre-Loup Martin
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,49 +18,29 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "CapacitiveADCPin.h"
+#include "CapacitiveADCSlider.h"
 #include "DigitalPin.h"
 
-const uint8_t readPin = A0;
-const uint8_t friendPin = A1;
+const uint8_t pin0 = A0;
+const uint8_t pin1 = A1;
+const uint8_t pin2 = A2;
 
 const uint8_t ledPin = 13;
 
-CapacitiveADCPin touch;
+CapacitiveADCSlider slider;
 DigitalPin lampe;
 
 void setup(){
 	Serial.begin(115200);
 
-	touch.init(readPin, friendPin);
-	touch.setChargeDelay(5);
-	touch.tuneBaseline();
+	slider.init(pin0, pin1, pin2);
+	slider.setChargeDelay(5);
+	slider.tuneBaseline();
+
 	lampe.init(ledPin, OUTPUT);
 	lampe = 0;
 }
 
 void loop(){
-	int16_t value = 0;
-	value = touch.update();
-
-	lampe = touch.isProx();
-
-	/*
-	if(value > 300){
-		lampe = 1;
-	} else {
-		lampe = 0;
-	}
-	*/
-/*
-	Serial.print("raw: ");
-	Serial.println(value);
-	Serial.println();
-*/
-	delay(10);
-	if(Serial.available()){
-		value = Serial.parseInt();
-		touch.setSamples(value);
-	}
 
 }
