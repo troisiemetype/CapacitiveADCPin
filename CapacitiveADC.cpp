@@ -21,35 +21,35 @@
 // Public methods
 
 // We initialize global settings once for all instances.
-SettingsGlobal_t CapacitiveADC::_gSettings = SettingsGlobal_t();
+CapADCSetGlobal_t CapADC::_gSettings = CapADCSetGlobal_t();
 
 
 // Set touch threshold
-void CapacitiveADC::setTouchThreshold(uint16_t threshold){
+void CapADC::setTouchThreshold(uint16_t threshold){
 	_lSettings.touchThreshold = threshold;
 }
 
 // Set untouch threshold
-void CapacitiveADC::setReleaseThreshold(uint16_t threshold){
+void CapADC::setReleaseThreshold(uint16_t threshold){
 	_lSettings.releaseThreshold = threshold;
 }
 
 // This is how we acceed to global setting (that all instances share),
 // As samples, divider, noise count, etc.
-void CapacitiveADC::applyGlobalSettings(const SettingsGlobal_t& settings){
+void CapADC::applyGlobalSettings(const CapADCSetGlobal_t& settings){
 	_gSettings = settings;
 }
 
 // A getter for the global setting struct, to be modified.
-SettingsGlobal_t CapacitiveADC::getGlobalSettings() const{
-	return _gSettings;
+CapADCSetGlobal_t* CapADC::getGlobalSettings(){
+	return &_gSettings;
 }
 // Same for the local settings (threshold and reset delay). Getter
-void CapacitiveADC::applyLocalSettings(const SettingsLocal_t& settings){
+void CapADC::applyLocalSettings(const CapADCSetLocal_t& settings){
 	_lSettings = settings;
 }
 
 // And setter, that we use once we have modified the values.
-SettingsLocal_t CapacitiveADC::getLocalSettings() const{
-	return _lSettings;
+CapADCSetLocal_t* CapADC::getLocalSettings(){
+	return &_lSettings;
 }

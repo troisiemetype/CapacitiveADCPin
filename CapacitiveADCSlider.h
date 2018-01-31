@@ -16,19 +16,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef CAPACITIVE_ADC_SLIDER_H
-#define CAPACITIVE_ADC_SLIDER_H
+#ifndef CAP_ADC_SLIDER_H
+#define CAP_ADC_SLIDER_H
 
 #define MAX_SLIDER_CHANNEL		4
 
 #include <Arduino.h>
 #include "CapacitiveADC.h"
 
-class CapacitiveADCSlider: public CapacitiveADC{
+class CapADCSlider: public CapADC{
 public:
 
-	CapacitiveADCSlider(void);
-	~CapacitiveADCSlider(void);
+	CapADCSlider(void);
+	~CapADCSlider(void);
 
 	virtual void init(uint8_t pin0, uint8_t pin1);
 	void init(uint8_t pin0, uint8_t pin1, uint8_t pin2);
@@ -49,8 +49,8 @@ public:
 
 	uint16_t getBaseline(void) const;
 
-//	void applyLocalSettings(const SettingsLocal_t& settings);
-//	SettingsLocal_t getLocalSettings() const;
+//	void applyLocalSettings(const CapADCSetLocal_t& settings);
+//	CapADCSetLocal_t getLocalSettings() const;
 
 protected:
 	virtual bool updatePosition(void);
@@ -58,12 +58,12 @@ protected:
 	void updateCal(uint8_t index);
 
 	// The pin linked to this capacitive channel
-	CapacitiveADCChannel* _adcChannel[MAX_SLIDER_CHANNEL];
+	CapADCChannel* _adcChannel[MAX_SLIDER_CHANNEL];
 
 	uint8_t _numChannels;
 
 	// Local (pin) settings
-	SettingsLocal_t _lSettings;
+	CapADCSetLocal_t _lSettings;
 
 	// values from readings
 	uint16_t _currentRead[MAX_SLIDER_CHANNEL + 1];

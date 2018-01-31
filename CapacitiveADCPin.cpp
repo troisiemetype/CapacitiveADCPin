@@ -21,32 +21,32 @@
 // Public methods
 
 // Constructor
-CapacitiveADCPin::CapacitiveADCPin():_baseline(200){
-	_adcChannel = new CapacitiveADCChannel();
+CapADCPin::CapADCPin():_baseline(200){
+	_adcChannel = new CapADCChannel();
 	_now = _prev = _state = _previousState = Idle;
 	_lSettings.resetCounter = 10;
 	_lastTime = millis();
 }
 
 // Destructor
-CapacitiveADCPin::~CapacitiveADCPin(){
+CapADCPin::~CapADCPin(){
 	delete _adcChannel;
 }
 
 // Init the object. Tie it to used pins.
-void CapacitiveADCPin::init(uint8_t pin, uint8_t friendPin){
+void CapADCPin::init(uint8_t pin, uint8_t friendPin){
 	_adcChannel->init(pin, friendPin);
 }
 
 // change the charge delay for this channel
-void CapacitiveADCPin::setChargeDelay(uint8_t value){
+void CapADCPin::setChargeDelay(uint8_t value){
 	_adcChannel->setChargeDelay(value);
 }
 
 
 // Tune baseline.
 // Take an amount of readings and average them to get a new baseline value.
-void CapacitiveADCPin::tuneBaseline(uint32_t length){
+void CapADCPin::tuneBaseline(uint32_t length){
 	uint32_t value = 0;
 	uint16_t count = 0;
 	length += millis();
@@ -66,7 +66,7 @@ void CapacitiveADCPin::tuneBaseline(uint32_t length){
 // Tune threshold.
 // Tune baseline, then read value from electrode for a given time, compute the max delta
 // and set threshold values for touch and prox.
-void CapacitiveADCPin::tuneThreshold(uint32_t length){
+void CapADCPin::tuneThreshold(uint32_t length){
 	tuneBaseline();
 	length += millis();
 	uint16_t _minBaseline = _baseline;
@@ -87,7 +87,7 @@ void CapacitiveADCPin::tuneThreshold(uint32_t length){
 }
 
 // launch a new read sequence.
-int16_t CapacitiveADCPin::update(){
+int16_t CapADCPin::update(){
 	// Update reading, save previous one.
 	_lastRead = _read;
 //	uint32_t length = micros();
@@ -147,37 +147,29 @@ int16_t CapacitiveADCPin::update(){
 }
 
 // Getter for touch state
-bool CapacitiveADCPin::isTouched() const{
+bool CapADCPin::isTouched() const{
 	if(_state == Touch) return true;
 	return false;
 }
 
 // Getter for touch state
-bool CapacitiveADCPin::isJustTouched() const{
+bool CapADCPin::isJustTouched() const{
 	if((_state == Touch) && (_previousState != Touch)) return true;
 	return false;
 }
 
 // Getter for touch state
-bool CapacitiveADCPin::isJustReleased() const{
+bool CapADCPin::isJustReleased() const{
 	if((_state != Touch) && (_previousState == Touch)) return true;
 	return false;
 }
 
-uint16_t CapacitiveADCPin::getBaseline(){
-	return _baseline;
-}
-
-uint16_t CapacitiveADCPin::getMaxDelta(){
-	return _maxDelta;
-}
-
 /*
-void CapacitiveADCPin::applyLocalSettings(const SettingsLocal_t& settings){
+void CapADCPin::applyLocalSettings(const CapADCSetLocal_t& settings){
 	_lSettings = settings;
 }
 
-SettingsLocal_t CapacitiveADCPin::getLocalSettings() const{
+CapADCSetLocal_t CapADCPin::getLocalSettings() const{
 	return _lSettings;
 }
 */
@@ -185,7 +177,7 @@ SettingsLocal_t CapacitiveADCPin::getLocalSettings() const{
 // Protected methods
 
 // Update the baseline value
-void CapacitiveADCPin::updateCal(){
+void CapADCPin::updateCal(){
 	uint16_t timeDelta = millis() - _lastTime;
 	if(_now == Rising){
 		if(timeDelta >= _gSettings.noiseCountRising){
@@ -202,7 +194,7 @@ void CapacitiveADCPin::updateCal(){
 }
 
 // Get a serie of readings.
-uint16_t CapacitiveADCPin::updateRead(){
+uint16_t CapADCPin::updateRead(){
 	int32_t value = 0;
 	uint16_t samples = 1 << _gSettings.samples;
 	uint16_t divider = 1 << _gSettings.divider;

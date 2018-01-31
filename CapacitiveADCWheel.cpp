@@ -21,7 +21,7 @@
 // Public methods
 
 // Constructor
-CapacitiveADCWheel::CapacitiveADCWheel(){
+CapADCWheel::CapADCWheel(){
 	for(uint8_t i = 0; i <= MAX_SLIDER_CHANNEL; ++i){
 		_nowState[i] = _prevState[i] = _state[i] = _previousState[i] = Idle;
 		_lastTime[i] = millis();
@@ -34,7 +34,7 @@ CapacitiveADCWheel::CapacitiveADCWheel(){
 }
 
 // Destructor
-CapacitiveADCWheel::~CapacitiveADCWheel(){
+CapADCWheel::~CapADCWheel(){
 	for(uint8_t i = 0; i < _numChannels; ++i){
 		delete _adcChannel[i];
 	}
@@ -43,18 +43,18 @@ CapacitiveADCWheel::~CapacitiveADCWheel(){
 // Init the object. Tie it to used pins.
 // Init with two pins has no meaning for a wheel, but as wheel inherits from slider, we have to keep it.
 // Don't use it, it returns without doing anything.
-void CapacitiveADCWheel::init(uint8_t pin0, uint8_t pin1){
+void CapADCWheel::init(uint8_t pin0, uint8_t pin1){
 	return;
 }
 
-void CapacitiveADCWheel::init(uint8_t pin0, uint8_t pin1, uint8_t pin2){
+void CapADCWheel::init(uint8_t pin0, uint8_t pin1, uint8_t pin2){
 	if(_numChannels != 0) return;
 
-	_adcChannel[0] = new CapacitiveADCChannel();
+	_adcChannel[0] = new CapADCChannel();
 	_adcChannel[0]->init(pin0, pin2);
-	_adcChannel[1] = new CapacitiveADCChannel();
+	_adcChannel[1] = new CapADCChannel();
 	_adcChannel[1]->init(pin1, pin2);
-	_adcChannel[2] = new CapacitiveADCChannel();
+	_adcChannel[2] = new CapADCChannel();
 	_adcChannel[2]->init(pin2, pin1);
 
 	_numChannels = 3;
@@ -64,16 +64,16 @@ void CapacitiveADCWheel::init(uint8_t pin0, uint8_t pin1, uint8_t pin2){
 	_weighting[2] = 171;	
 }
 /*
-void CapacitiveADCWheel::init(uint8_t pin0, uint8_t pin1, uint8_t pin2, uint8_t pin3){
+void CapADCWheel::init(uint8_t pin0, uint8_t pin1, uint8_t pin2, uint8_t pin3){
 	if(_numChannels != 0) return;
 
-	_adcChannel[0] = new CapacitiveADCChannel();
+	_adcChannel[0] = new CapADCChannel();
 	_adcChannel[0]->init(pin0, pin1);
-	_adcChannel[1] = new CapacitiveADCChannel();
+	_adcChannel[1] = new CapADCChannel();
 	_adcChannel[1]->init(pin1, pin2);
-	_adcChannel[2] = new CapacitiveADCChannel();
+	_adcChannel[2] = new CapADCChannel();
 	_adcChannel[2]->init(pin2, pin3);
-	_adcChannel[3] = new CapacitiveADCChannel();
+	_adcChannel[3] = new CapADCChannel();
 	_adcChannel[3]->init(pin3, pin0);
 
 	_numChannels = 4;
@@ -87,23 +87,23 @@ void CapacitiveADCWheel::init(uint8_t pin0, uint8_t pin1, uint8_t pin2, uint8_t 
 */
 /*
 // If ever you need more channels for one long slider, you can uncomment this init function.
-// You will have to uncomment also the matching one in CapacitiveADCWheel.h,
+// You will have to uncomment also the matching one in CapADCWheel.h,
 // and also change the #define MAX_SLIDER_CHANNEL accordingly.
 // If you ever need even more than 6 channels (wich is unlikely to happen if you use a Uno),
 // just copy the body of the function, and add lines for other channels. ;)
 
-void CapacitiveADCWheel::init(uint8_t pin0, uint8_t pin1, uint8_t pin2, uint8_t pin3, uint8_t pin4){
+void CapADCWheel::init(uint8_t pin0, uint8_t pin1, uint8_t pin2, uint8_t pin3, uint8_t pin4){
 	if(_numChannels != 0) return;
 
-	_adcChannel[0] = new CapacitiveADCChannel();
+	_adcChannel[0] = new CapADCChannel();
 	_adcChannel[0]->init(pin0, pin1);
-	_adcChannel[1] = new CapacitiveADCChannel();
+	_adcChannel[1] = new CapADCChannel();
 	_adcChannel[1]->init(pin1, pin2);
-	_adcChannel[2] = new CapacitiveADCChannel();
+	_adcChannel[2] = new CapADCChannel();
 	_adcChannel[2]->init(pin2, pin3);
-	_adcChannel[3] = new CapacitiveADCChannel();
+	_adcChannel[3] = new CapADCChannel();
 	_adcChannel[3]->init(pin3, pin4);
-	_adcChannel[4] = new CapacitiveADCChannel();
+	_adcChannel[4] = new CapADCChannel();
 	_adcChannel[4]->init(pin4, pin0);
 
 	_numChannels = 5;
@@ -116,20 +116,20 @@ void CapacitiveADCWheel::init(uint8_t pin0, uint8_t pin1, uint8_t pin2, uint8_t 
 
 }
 
-void CapacitiveADCWheel::init(uint8_t pin0, uint8_t pin1, uint8_t pin2, uint8_t pin3, uint8_t pin4, uint8_t pin5){
+void CapADCWheel::init(uint8_t pin0, uint8_t pin1, uint8_t pin2, uint8_t pin3, uint8_t pin4, uint8_t pin5){
 	if(_numChannels != 0) return;
 
-	_adcChannel[0] = new CapacitiveADCChannel();
+	_adcChannel[0] = new CapADCChannel();
 	_adcChannel[0]->init(pin0, pin1);
-	_adcChannel[1] = new CapacitiveADCChannel();
+	_adcChannel[1] = new CapADCChannel();
 	_adcChannel[1]->init(pin1, pin2);
-	_adcChannel[2] = new CapacitiveADCChannel();
+	_adcChannel[2] = new CapADCChannel();
 	_adcChannel[2]->init(pin2, pin3);
-	_adcChannel[3] = new CapacitiveADCChannel();
+	_adcChannel[3] = new CapADCChannel();
 	_adcChannel[3]->init(pin3, pin4);
-	_adcChannel[4] = new CapacitiveADCChannel();
+	_adcChannel[4] = new CapADCChannel();
 	_adcChannel[4]->init(pin4, pin5);
-	_adcChannel[5] = new CapacitiveADCChannel();
+	_adcChannel[5] = new CapADCChannel();
 	_adcChannel[5]->init(pin5, pin0);
 
 	_numChannels = 6;
@@ -147,7 +147,7 @@ void CapacitiveADCWheel::init(uint8_t pin0, uint8_t pin1, uint8_t pin2, uint8_t 
 // Protected methods
 
 // Compute current position
-bool CapacitiveADCWheel::updatePosition(void){
+bool CapADCWheel::updatePosition(void){
 
 	bool touch = false;
 	// If we have a touch, it's time to see where on the slider we are!

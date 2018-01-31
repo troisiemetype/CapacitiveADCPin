@@ -21,7 +21,7 @@
 // Public methods
 
 // Constructor
-CapacitiveADCSlider::CapacitiveADCSlider(){
+CapADCSlider::CapADCSlider(){
 	for(uint8_t i = 0; i <= MAX_SLIDER_CHANNEL; ++i){
 		_nowState[i] = _prevState[i] = _state[i] = _previousState[i] = Idle;
 		_lastTime[i] = millis();
@@ -34,7 +34,7 @@ CapacitiveADCSlider::CapacitiveADCSlider(){
 }
 
 // Destructor
-CapacitiveADCSlider::~CapacitiveADCSlider(){
+CapADCSlider::~CapADCSlider(){
 	for(uint8_t i = 0; i < _numChannels; ++i){
 		delete _adcChannel[i];
 	}
@@ -42,11 +42,11 @@ CapacitiveADCSlider::~CapacitiveADCSlider(){
 
 // Init the object. Tie it to used pins.
 
-void CapacitiveADCSlider::init(uint8_t pin0, uint8_t pin1){
+void CapADCSlider::init(uint8_t pin0, uint8_t pin1){
 	if(_numChannels != 0) return;
-	_adcChannel[0] = new CapacitiveADCChannel();
+	_adcChannel[0] = new CapADCChannel();
 	_adcChannel[0]->init(pin0, pin1);
-	_adcChannel[1] = new CapacitiveADCChannel();
+	_adcChannel[1] = new CapADCChannel();
 	_adcChannel[1]->init(pin1, pin0);
 
 	_numChannels = 2;
@@ -55,14 +55,14 @@ void CapacitiveADCSlider::init(uint8_t pin0, uint8_t pin1){
 	_weighting[1] = -127;	
 }
 
-void CapacitiveADCSlider::init(uint8_t pin0, uint8_t pin1, uint8_t pin2){
+void CapADCSlider::init(uint8_t pin0, uint8_t pin1, uint8_t pin2){
 	if(_numChannels != 0) return;
 
-	_adcChannel[0] = new CapacitiveADCChannel();
+	_adcChannel[0] = new CapADCChannel();
 	_adcChannel[0]->init(pin0, pin1);
-	_adcChannel[1] = new CapacitiveADCChannel();
+	_adcChannel[1] = new CapADCChannel();
 	_adcChannel[1]->init(pin1, pin2);
-	_adcChannel[2] = new CapacitiveADCChannel();
+	_adcChannel[2] = new CapADCChannel();
 	_adcChannel[2]->init(pin2, pin0);
 
 	_numChannels = 3;
@@ -72,16 +72,16 @@ void CapacitiveADCSlider::init(uint8_t pin0, uint8_t pin1, uint8_t pin2){
 	_weighting[2] = -127;	
 }
 
-void CapacitiveADCSlider::init(uint8_t pin0, uint8_t pin1, uint8_t pin2, uint8_t pin3){
+void CapADCSlider::init(uint8_t pin0, uint8_t pin1, uint8_t pin2, uint8_t pin3){
 	if(_numChannels != 0) return;
 
-	_adcChannel[0] = new CapacitiveADCChannel();
+	_adcChannel[0] = new CapADCChannel();
 	_adcChannel[0]->init(pin0, pin1);
-	_adcChannel[1] = new CapacitiveADCChannel();
+	_adcChannel[1] = new CapADCChannel();
 	_adcChannel[1]->init(pin1, pin2);
-	_adcChannel[2] = new CapacitiveADCChannel();
+	_adcChannel[2] = new CapADCChannel();
 	_adcChannel[2]->init(pin2, pin3);
-	_adcChannel[3] = new CapacitiveADCChannel();
+	_adcChannel[3] = new CapADCChannel();
 	_adcChannel[3]->init(pin3, pin0);
 
 	_numChannels = 4;
@@ -95,23 +95,23 @@ void CapacitiveADCSlider::init(uint8_t pin0, uint8_t pin1, uint8_t pin2, uint8_t
 
 /*
 // If ever you need more channels for one long slider, you can uncomment this init function.
-// You will have to uncomment also the matching one in CapacitiveADCSlider.h,
+// You will have to uncomment also the matching one in CapADCSlider.h,
 // and also change the #define MAX_SLIDER_CHANNEL accordingly.
 // If you ever need even more than 6 channels (wich is unlikely to happen if you use a Uno),
 // just copy the body of the function, and add lines for other channels. ;)
 
-void CapacitiveADCSlider::init(uint8_t pin0, uint8_t pin1, uint8_t pin2, uint8_t pin3, uint8_t pin4){
+void CapADCSlider::init(uint8_t pin0, uint8_t pin1, uint8_t pin2, uint8_t pin3, uint8_t pin4){
 	if(_numChannels != 0) return;
 
-	_adcChannel[0] = new CapacitiveADCChannel();
+	_adcChannel[0] = new CapADCChannel();
 	_adcChannel[0]->init(pin0, pin1);
-	_adcChannel[1] = new CapacitiveADCChannel();
+	_adcChannel[1] = new CapADCChannel();
 	_adcChannel[1]->init(pin1, pin2);
-	_adcChannel[2] = new CapacitiveADCChannel();
+	_adcChannel[2] = new CapADCChannel();
 	_adcChannel[2]->init(pin2, pin3);
-	_adcChannel[3] = new CapacitiveADCChannel();
+	_adcChannel[3] = new CapADCChannel();
 	_adcChannel[3]->init(pin3, pin4);
-	_adcChannel[4] = new CapacitiveADCChannel();
+	_adcChannel[4] = new CapADCChannel();
 	_adcChannel[4]->init(pin4, pin0);
 
 	_numChannels = 5;
@@ -124,20 +124,20 @@ void CapacitiveADCSlider::init(uint8_t pin0, uint8_t pin1, uint8_t pin2, uint8_t
 
 }
 
-void CapacitiveADCSlider::init(uint8_t pin0, uint8_t pin1, uint8_t pin2, uint8_t pin3, uint8_t pin4, uint8_t pin5){
+void CapADCSlider::init(uint8_t pin0, uint8_t pin1, uint8_t pin2, uint8_t pin3, uint8_t pin4, uint8_t pin5){
 	if(_numChannels != 0) return;
 
-	_adcChannel[0] = new CapacitiveADCChannel();
+	_adcChannel[0] = new CapADCChannel();
 	_adcChannel[0]->init(pin0, pin1);
-	_adcChannel[1] = new CapacitiveADCChannel();
+	_adcChannel[1] = new CapADCChannel();
 	_adcChannel[1]->init(pin1, pin2);
-	_adcChannel[2] = new CapacitiveADCChannel();
+	_adcChannel[2] = new CapADCChannel();
 	_adcChannel[2]->init(pin2, pin3);
-	_adcChannel[3] = new CapacitiveADCChannel();
+	_adcChannel[3] = new CapADCChannel();
 	_adcChannel[3]->init(pin3, pin4);
-	_adcChannel[4] = new CapacitiveADCChannel();
+	_adcChannel[4] = new CapADCChannel();
 	_adcChannel[4]->init(pin4, pin5);
-	_adcChannel[5] = new CapacitiveADCChannel();
+	_adcChannel[5] = new CapADCChannel();
 	_adcChannel[5]->init(pin5, pin0);
 
 	_numChannels = 6;
@@ -153,7 +153,7 @@ void CapacitiveADCSlider::init(uint8_t pin0, uint8_t pin1, uint8_t pin2, uint8_t
 */
 
 // change the charge delay for this channel
-void CapacitiveADCSlider::setChargeDelay(uint8_t value){
+void CapADCSlider::setChargeDelay(uint8_t value){
 	for(uint8_t i = 0; i < _numChannels; ++i){
 		_adcChannel[i]->setChargeDelay(value);
 	}
@@ -161,7 +161,7 @@ void CapacitiveADCSlider::setChargeDelay(uint8_t value){
 
 // Tune baseline.
 // Take an amount of readings and average them to get a new baseline value.
-void CapacitiveADCSlider::tuneBaseline(uint32_t length){
+void CapADCSlider::tuneBaseline(uint32_t length){
 	_baseline[_numChannels] = 0;
 
 	for(uint8_t i = 0; i < _numChannels; ++i){
@@ -189,7 +189,7 @@ void CapacitiveADCSlider::tuneBaseline(uint32_t length){
 // Tune threshold.
 // Tune baseline, then read value from electrode for a given time, compute the max delta
 // and set threshold values for touch.
-void CapacitiveADCSlider::tuneThreshold(uint32_t length){
+void CapADCSlider::tuneThreshold(uint32_t length){
 	tuneBaseline();
 	length += millis();
 	uint16_t minBaseline[_numChannels];
@@ -218,7 +218,7 @@ void CapacitiveADCSlider::tuneThreshold(uint32_t length){
 }
 
 // launch a new read sequence.
-int16_t CapacitiveADCSlider::update(void){
+int16_t CapADCSlider::update(void){
 
 	// We first update the last virtual channel, which is the average of all others
 	_previousRead[_numChannels] = _currentRead[_numChannels];
@@ -288,33 +288,33 @@ int16_t CapacitiveADCSlider::update(void){
 }
 
 // Getter for touch state
-bool CapacitiveADCSlider::isTouched(void) const{
+bool CapADCSlider::isTouched(void) const{
 	if(_state[_numChannels] == Touch) return true;
 	return false;
 }
 
 // Getter for current value
-int8_t CapacitiveADCSlider::getPosition(void) const{
+int8_t CapADCSlider::getPosition(void) const{
 	return _position;
 }
 
 // Getter for current step value.
 // We reset the _step value, so we can keep track of missed movement.
-int8_t CapacitiveADCSlider::getStep(void){
+int8_t CapADCSlider::getStep(void){
 	int8_t step = _step;
 	_step = 0;
 	return step;
 }
 
 
-uint16_t CapacitiveADCSlider::getBaseline(void) const{
+uint16_t CapADCSlider::getBaseline(void) const{
 	return _baseline[_numChannels];
 }
 
 // Protected methods
 
 // Compute current position
-bool CapacitiveADCSlider::updatePosition(void){
+bool CapADCSlider::updatePosition(void){
 
 	bool touch = false;
 	// If we have a touch, it's time to see where on the slider we are!
@@ -346,7 +346,7 @@ bool CapacitiveADCSlider::updatePosition(void){
 }
 
 // Update the baseline value
-void CapacitiveADCSlider::updateCal(uint8_t index){
+void CapADCSlider::updateCal(uint8_t index){
 	// We check the time delta since last update
 	uint16_t timeDelta = millis() - _lastTime[index];
 	// Then if above noise count threshold, we update baseline, rising or falling.
@@ -365,7 +365,7 @@ void CapacitiveADCSlider::updateCal(uint8_t index){
 }
 
 // Get a serie of readings from the bare channel
-uint16_t CapacitiveADCSlider::updateRead(uint8_t index){
+uint16_t CapADCSlider::updateRead(uint8_t index){
 	int32_t value = 0;
 	// samples sets (2^samples) the number of consecutive reads to be made
 	// More is better filtering, but means a longer time.

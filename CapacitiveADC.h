@@ -16,13 +16,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef CAPACITIVE_ADC_H
-#define CAPACITIVE_ADC_H
+#ifndef CAP_ADC_H
+#define CAP_ADC_H
 
 #include <Arduino.h>
 #include "CapacitiveADCChannel.h"
 
-struct SettingsGlobal_t{
+struct CapADCSetGlobal_t{
 	uint8_t samples; 					// The number of samples taken for one read
 	uint8_t divider;					// The number that computes the average from reads
 	uint8_t expWeight;					// Weight for exp filter. ratio, 0 to 255. fixpoint math
@@ -31,7 +31,7 @@ struct SettingsGlobal_t{
 	uint16_t noiseCountRising;			// Number of reads above noiseDelta for baseline adjust
 	uint16_t noiseCountFalling;			// Number of reads under noiseDelta for baseline adjust
 
-	SettingsGlobal_t():	samples(4),
+	CapADCSetGlobal_t():	samples(4),
 						divider(1),
 						expWeight(40),
 						debounce(2),
@@ -40,18 +40,18 @@ struct SettingsGlobal_t{
 						noiseCountFalling(5){}
 };
 
-struct SettingsLocal_t{
+struct CapADCSetLocal_t{
 	// Threshold values
 	int16_t touchThreshold;
 	int16_t releaseThreshold;
 	uint8_t resetCounter;
 
-	SettingsLocal_t():	touchThreshold(50),
+	CapADCSetLocal_t():	touchThreshold(50),
 						releaseThreshold(40),
 						resetCounter(255){}
 };
 
-class CapacitiveADC{
+class CapADC{
 public:
 
 	enum state_t{
@@ -68,19 +68,19 @@ public:
 	virtual void setTouchThreshold(uint16_t threshold);
 	virtual void setReleaseThreshold(uint16_t threshold);
 
-	void applyGlobalSettings(const SettingsGlobal_t& settings);
-	SettingsGlobal_t getGlobalSettings() const;
+	void applyGlobalSettings(const CapADCSetGlobal_t& settings);
+	CapADCSetGlobal_t* getGlobalSettings();
 
-	void applyLocalSettings(const SettingsLocal_t& settings);
-	SettingsLocal_t getLocalSettings() const;
+	void applyLocalSettings(const CapADCSetLocal_t& settings);
+	CapADCSetLocal_t* getLocalSettings();
 
 protected:
 
 	// Global settings
-	static SettingsGlobal_t _gSettings;
+	static CapADCSetGlobal_t _gSettings;
 
 	// Local (pin) settings
-	SettingsLocal_t _lSettings;
+	CapADCSetLocal_t _lSettings;
 
 };
 

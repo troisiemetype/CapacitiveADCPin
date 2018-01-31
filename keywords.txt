@@ -6,18 +6,18 @@
 # Datatypes (KEYWORD)
 #######################################
 
-CapacitiveADC				KEYWORD1
+CapADC						KEYWORD1
 state_t						KEYWORD1
-SettingsLocal_t				KEYWORD1
-SettingsGlobal_t			KEYWORD1
+CapADCSetLocal_t			KEYWORD1
+CapADCSetGlobal_t			KEYWORD1
 
 #######################################
 # Methods and Functions (KEYWORD)
 #######################################
 
 
-CapacitiveADC				KEYWORD2
-~CapacitiveADC				KEYWORD2
+CapADC						KEYWORD2
+~CapADC						KEYWORD2
 
 init						KEYWORD2
 

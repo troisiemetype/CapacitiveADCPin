@@ -16,15 +16,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef CAPACITIVE_ADC_CHANNEL_H
-#define CAPACITIVE_ADC_CHANNEL_H
+#ifndef CAP_ADC_CHANNEL_H
+#define CAP_ADC_CHANNEL_H
 
 #include <Arduino.h>
 
 
-class CapacitiveADCChannel{
+class CapADCChannel{
 public:
-	CapacitiveADCChannel();
+	CapADCChannel();
 
 	void init(uint8_t pin, uint8_t friendPin);
 

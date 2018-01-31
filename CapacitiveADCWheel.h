@@ -16,19 +16,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef CAPACITIVE_ADC_WHEEL_H
-#define CAPACITIVE_ADC_WHEEL_H
+#ifndef CAP_ADC_WHEEL_H
+#define CAP_ADC_WHEEL_H
 
 #define MAX_WHEEL_CHANNEL		3
 
 #include <Arduino.h>
 #include "CapacitiveADCSlider.h"
 
-class CapacitiveADCWheel: public CapacitiveADCSlider{
+class CapADCWheel: public CapADCSlider{
 public:
 
-	CapacitiveADCWheel(void);
-	~CapacitiveADCWheel(void);
+	CapADCWheel(void);
+	~CapADCWheel(void);
 
 	void init(uint8_t pin0, uint8_t pin1);
 	void init(uint8_t pin0, uint8_t pin1, uint8_t pin2);

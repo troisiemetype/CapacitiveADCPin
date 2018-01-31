@@ -16,17 +16,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef CAPACITIVE_ADC_PIN_H
-#define CAPACITIVE_ADC_PIN_H
+#ifndef CAP_ADC_PIN_H
+#define CAP_ADC_PIN_H
 
 #include <Arduino.h>
 #include "CapacitiveADC.h"
 
-class CapacitiveADCPin: public CapacitiveADC{
+class CapADCPin: public CapADC{
 public:
 
-	CapacitiveADCPin();
-	~CapacitiveADCPin();
+	CapADCPin();
+	~CapADCPin();
 
 	void init(uint8_t pin, uint8_t friendPin = 0);
 
@@ -42,22 +42,23 @@ public:
 	bool isJustTouched() const;
 	bool isJustReleased() const;
 
-	uint16_t getBaseline();
-	uint16_t getMaxDelta();
+	uint16_t getBaseline() const{return _baseline;}
+	uint16_t getMaxDelta() const {return _maxDelta;}
+	int16_t getDelta() const {return _delta;}
 
-//	void applyLocalSettings(const SettingsLocal_t& settings);
-//	SettingsLocal_t getLocalSettings() const;
+//	void applyLocalSettings(const CapADCSetLocal_t& settings);
+//	CapADCSetLocal_t getLocalSettings() const;
 
 protected:
 	uint16_t updateRead();
 	void updateCal();
 
 	// The pin linked to this capacitive channel;
-	CapacitiveADCChannel *_adcChannel;
+	CapADCChannel *_adcChannel;
 
 /*
 	// Local (pin) settings
-	SettingsLocal_t _lSettings;
+	CapADCSetLocal_t _lSettings;
 */
 	// values from readings
 	uint16_t _read;

@@ -21,7 +21,7 @@
 // Public methods
 
 // Constructor
-CapacitiveADCChannel::CapacitiveADCChannel(){
+CapADCChannel::CapADCChannel(){
 	// Definition for ADC, when more than 8 ADC channels (Atmega 32u4, 2560, etc.)
 	#if defined(MUX5)
 	ADMUX = 0b01011111;
@@ -46,7 +46,7 @@ CapacitiveADCChannel::CapacitiveADCChannel(){
 
 
 // Init method: affect a pin to the object.
-void CapacitiveADCChannel::init(uint8_t pin, uint8_t friendPin){
+void CapADCChannel::init(uint8_t pin, uint8_t friendPin){
 	// Get a local copy of the pin numbers
 	_channel = pin;
 	_friendChannel = friendPin;
@@ -144,13 +144,13 @@ void CapacitiveADCChannel::init(uint8_t pin, uint8_t friendPin){
 // Set the charge delay.
 // This is the minimal delay for the charge to transfer from electrode to s&h capacitor,
 // back and forth.
-void CapacitiveADCChannel::setChargeDelay(uint8_t value){
+void CapADCChannel::setChargeDelay(uint8_t value){
 	_transfertDelay = value;
 }
 
 
 // Read function.
-int16_t CapacitiveADCChannel::read(){
+int16_t CapADCChannel::read(){
 //	ADMUX |= _BV(5);
 	ADCSRA &= ~0b111;
 	ADCSRA |= 0b011;
@@ -248,7 +248,7 @@ int16_t CapacitiveADCChannel::read(){
 // This is about the same as an analogRead():
 // Set the pin to input (three-stated), then connect ADC mux,
 // and start a conversion.
-uint8_t CapacitiveADCChannel::share(){
+uint8_t CapADCChannel::share(){
 	uint8_t value = 0;
 	// Set the pin to input, three-stated.
 	*_ddrRPin &= ~_maskPin;
@@ -272,7 +272,7 @@ uint8_t CapacitiveADCChannel::share(){
 */
 // Set the ADC to a channel.
 // That can be ground for discharging, electrode pin for reading, or friend pin for charging.
-void CapacitiveADCChannel::setMux(uint8_t channel){
+void CapADCChannel::setMux(uint8_t channel){
 	// Set channel number to 0
 	ADMUX &= ~(0x1F);
 
