@@ -18,6 +18,14 @@
 
 #include "CapacitiveADCChannel.h"
 
+#if defined(CORE_TEENSY)
+static const uint8_t PROGMEM adc_mapping[] = {
+// 0, 1, 4, 5, 6, 7, 13, 12, 11, 10, 9, 8
+   0, 1, 4, 5, 6, 7, 13, 12, 11, 10, 9, 8, 10, 11, 12, 13, 7, 6, 5, 4, 1, 0, 8 
+};
+
+#endif
+
 // Public methods
 
 // Constructor
@@ -69,6 +77,8 @@ void CapADCChannel::init(uint8_t pin, uint8_t friendPin){
 #elif defined(__AVR_ATTiny24__) || defined(__AVR_ATTiny44__) || defined(__AVR_ATTiny84__) ||\
 	defined(__AVR_ATTiny24A__) || defined(__AVR_ATTiny44A__) || defined(__AVR_ATTiny84A__)
 	// No channel offset for ATtiny 24/44/84
+	// But we have to check that the power reduction is not active
+	PPR &= ~(1 << PRADC);
 #else
 	if(_channel >= 14) _channel -= 14;
 	if(_friendChannel >= 14) _friendChannel -= 14;
@@ -87,8 +97,13 @@ void CapADCChannel::init(uint8_t pin, uint8_t friendPin){
 
 	// For Atmega 32u4 (leonardo, micro) only: map the analog pin number to ADC channel.
 #if defined(__AVR_ATmega32U4__)
+	#if defined(CORE_TEENSY)
+	_channel = pgm_read_byte(adc_mapping + _channel);
+	_friendChannel = pgm_read_byte(adc_mapping + _friendChannel);
+	#else
 	_channel = analogPinToChannel(_channel);
 	_friendChannel = analogPinToChannel(_friendChannel);
+	#endif
 #endif
 
 	// We don't need to init the ADC mux now,
@@ -125,9 +140,14 @@ void CapADCChannel::init(uint8_t pin, uint8_t friendPin){
 
 #elif defined(__AVR_ATTiny24__) || defined(__AVR_ATTiny44__) || defined(__AVR_ATTiny84__) ||\
 	defined(__AVR_ATTiny24A__) || defined(__AVR_ATTiny44A__) || defined(__AVR_ATTiny84A__)
+	// VCC as reference, channel 0 enabled (is changed on each reading)
 	ADMUX = 0b00000000;
+	// ADC enable, ADC start conversion 0, ADC auto trigger disabled, ADC interrupt disabled,
+	// ADC prescaler set to 16 (0b10).
 	ADCSRA = 0b10000010;
+	// Bipolar input mode disable, multiplexer disabled, result right-adjusted, no auto-trigger.
 	ADCSRB = 0b00000000;
+	// See if we set the DIDR0 register, to disable digital input on pin used as ADC.
 	// Definition for ADC, when 8 ADC Channels or less (ATmega 328p)
 #else
 	ADMUX = 0b01001111;

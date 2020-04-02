@@ -41,15 +41,24 @@ void CapADC::applyGlobalSettings(const CapADCSetGlobal_t& settings){
 }
 
 // A getter for the global setting struct, to be modified.
-CapADCSetGlobal_t* CapADC::getGlobalSettings(){
+CapADCSetGlobal_t* CapADC::globalSettings(){
 	return &_gSettings;
 }
+
+CapADCSetGlobal_t CapADC::getGlobalSettings()const{
+	return _gSettings;
+}
+
 // Same for the local settings (threshold and reset delay). Getter
 void CapADC::applyLocalSettings(const CapADCSetLocal_t& settings){
 	_lSettings = settings;
 }
 
 // And setter, that we use once we have modified the values.
-CapADCSetLocal_t* CapADC::getLocalSettings(){
+CapADCSetLocal_t* CapADC::localSettings(){
 	return &_lSettings;
+}
+
+CapADCSetLocal_t CapADC::getLocalSettings()const{
+	return _lSettings;
 }

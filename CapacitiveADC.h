@@ -69,10 +69,13 @@ public:
 	virtual void setReleaseThreshold(uint16_t threshold);
 
 	void applyGlobalSettings(const CapADCSetGlobal_t& settings);
-	CapADCSetGlobal_t* getGlobalSettings();
+	CapADCSetGlobal_t* globalSettings();
+	CapADCSetGlobal_t getGlobalSettings()const;
+
 
 	void applyLocalSettings(const CapADCSetLocal_t& settings);
-	CapADCSetLocal_t* getLocalSettings();
+	CapADCSetLocal_t* localSettings();
+	CapADCSetLocal_t getLocalSettings()const;
 
 protected:
 

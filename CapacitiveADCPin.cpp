@@ -199,6 +199,9 @@ uint16_t CapADCPin::updateRead(){
 	uint16_t samples = 1 << _gSettings.samples;
 	uint16_t divider = 1 << _gSettings.divider;
 
+	// One discarded read to account for errors on first read an a new ADC
+	_adcChannel->read();
+
 	for(uint16_t i = 0; i < samples; ++i){
 		value += _adcChannel->read();
 	}
