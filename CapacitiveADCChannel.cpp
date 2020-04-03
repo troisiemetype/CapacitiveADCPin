@@ -301,7 +301,7 @@ void CapADCChannel::setMux(uint8_t channel){
 #if !defined(__AVR_ATTiny24__) && !defined(__AVR_ATTiny44__) && !defined(__AVR_ATTiny84__) &&\
 	!defined(__AVR_ATTiny24A__) && !defined(__AVR_ATTiny44A__) && !defined(__AVR_ATTiny84A__)
 #if defined(MUX5)
-	ADCSRB |= (ADCSRB & ~_BV(MUX5)) | (((channel >> 3) & 0x01) << MUX5);
+	ADCSRB = (ADCSRB & ~_BV(MUX5)) | (((channel >> 3) & 0x01) << MUX5);
 #endif // MUX5
 #endif // ATtiny
 }
